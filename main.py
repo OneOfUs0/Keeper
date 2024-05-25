@@ -25,7 +25,14 @@ if 'starttime' not in st.session_state:
 if 'stoptime' not in st.session_state:
     st.session_state.stoptime = ''
 
+if 'counter' not in st.session_state:
+    st.session_state.counter = 0
+
+if 'startstop_text' not in st.session_state:
+    st.session_state.startstop_text = 'XXX'
+
 # ================================== FUNCTIONS =========================================
+
 @st.cache_data
 def GetProjects():
 
@@ -49,31 +56,23 @@ def GetProjects():
 
 # ================================== UI CALLBACKS =========================================
 
-def stop_onclick():
-    # STOP          STOP         STOP
+def startstop_onclick(status):
 
-    print('STOP RUN')
-
-    if st.session_state.status == 'working':
+    if status == 'working':
         st.session_state.status = 'resting'
         st.session_state.stoptime = datetime.datetime.now()
         print('Stopped timer')
+        st.session_state.counter += 1
 
+        st.session_state.startstop_text = 'Start'
 
-    # calculate elapsed time
-
-    # record the time elapsed on that project.
-
-def start_onclick():
-    # START         START         START
-
-    print('START RUN')
-
-    # START
-    if st.session_state.status == 'resting':
+    if status == 'resting':
         st.session_state.status = 'working'
         st.session_state.starttime = datetime.datetime.now()
         print('Started timer')
+        st.session_state.counter += 1
+
+        st.session_state.startstop_text = 'Stop'
 
 
 # ===============================  UI  ===========================================
@@ -81,21 +80,10 @@ def start_onclick():
 st.title('Project Time Keeper')
 
 st.divider()
-cont_startstop = st.container()
 
-cont_startstop.subheader(st.session_state.status)
+st.subheader(st.session_state.status)
 
-if st.session_state.status == 'rest':
-    notworking = True
-    notresting = False
-
-if st.session_state.status == 'work':
-    notworking = False
-    notresting = True
-
-
-startwork = cont_startstop.button('Start',key='btn_start',on_click=start_onclick(),disabled=False)
-stopwork = cont_startstop.button('Stop',key='btn_stop',on_click=stop_onclick(),disabled=False)
+st.button(st.session_state.startstop_text,key='btn_startstop',on_click=startstop_onclick(st.session_state.status))
 
 
 st.divider()
@@ -114,7 +102,6 @@ if __name__ == '__main__':
 
     print('---- MAIN ----')
     print('status:' + st.session_state['status'])
-
 
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
