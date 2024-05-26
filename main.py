@@ -37,6 +37,9 @@ if 'txt_comment' not in st.session_state:
 if 'startstop_text' not in st.session_state:
     st.session_state.startstop_text = 'Toggle to Start working'
 
+if 'active_project_code' not in st.session_state:
+    st.session_state.active_project_code = '0'
+
 # ================================== FUNCTIONS =========================================
 
 @st.cache_data
@@ -58,6 +61,7 @@ def GetProjects():
         records.append(rec)
 
     df = pd.DataFrame(records)
+
     return df
 
 def AddNewProject(newcode, newname):
@@ -72,9 +76,9 @@ def AddEntry():
     start = st.session_state.starttime
     stop = st.session_state.stoptime
 
-    elapsed = stop - start
-    elap_seconds = elapsed.total_seconds()
-    print('Worked for ' + str(int(elap_seconds)) + ' seconds on ' + st.session_state.comment)
+    # elapsed = stop - start
+    # elap_seconds = elapsed.total_seconds()
+    # print('Worked for ' + str(int(elap_seconds)) + ' seconds on ' + st.session_state.comment)
 
     # write this to the work log.
 
@@ -90,12 +94,15 @@ def startworking():
 def stopworking():
     print('STOPPED WORKING')
 
+    actcode = st.session_state.active_project_code
+
+
     # status change
     #st.session_state.startstop_text = 'Toggle to start working'
 
     # stop time
     st.session_state.stoptime = datetime.datetime.now()
-    print('Stopped timer at ' + str(st.session_state.stoptime))
+    print('Stopped timer at ' + str(st.session_state.stoptime) + ' CODE: ' + actcode)
 
     # LOG billcode, time, and comments.
     AddEntry()
@@ -143,17 +150,27 @@ def comment_changed():
     st.session_state.comment = thecomment
     print('updated to ' + thecomment)
 
+def data_editor_changed():
+    print('NEW SELECTION')
+
 
 # ===============================  UI  ===========================================
 
 st.title('Project Time Keeper')
 
 st.divider()
+
+# ------- CONTROLS - StartStop, Comments -----
 st.subheader('Control work here.') #st.session_state.status)
 
 #st.button(st.session_state.startstop_text,key='btn_startstop',on_click=startstop_onclick(st.session_state.status))
 
-onoff = st.toggle('Working',key='toggle_work',help='Turn on when you start working.  Turn off when you stop working.')
+type(st.session_state['active_project_code'])
+
+
+onoff = st.toggle('Working',key='toggle_work',
+                  disabled=False,
+                  help='Turn on when you start working.  Turn off when you stop working.')
 if onoff:
     startworking()
 else:
@@ -162,12 +179,44 @@ else:
 st.text_area('Comments',key='txt_comment', on_change=comment_changed(), max_chars=200,help='Type comments for this work.')
 
 
-
+# ------- PROJECTS -----
 st.subheader('Projects',help='Choose the project you will be working on.')
 
-st.dataframe(GetProjects(),use_container_width=True)
+#st.dataframe(GetProjects(),use_container_width=True)
+
+# get pandas dataframe
+df = GetProjects()
 
 
+# Add a true/false field to the first column.
+df_selections = df.copy()
+df_selections.insert(0, "Apply to this", False)
+
+# configure the "Apply to this" column to have checkboxes
+column_config = {'Apply to this':st.column_config.CheckboxColumn(required=True)}
+
+# create the Data Editor
+edited_df = st.data_editor(df_selections,
+                           hide_index=True,
+                           column_config=column_config,
+                           disabled=['code','name'],  use_container_width=True,
+                           on_change=data_editor_changed()
+                           )
+
+# check for mulitple selections.
+sel_codes = edited_df.loc[edited_df['Apply to this']]["code"]
+if len(sel_codes) == 0:
+    st.session_state.active_project_code = '0'
+elif len(sel_codes) > 1:
+    st.warning('Select only one Project.')
+    st.session_state.active_project_code = '0'
+else:
+    selected_code = sel_codes.iloc[0]
+    # save to session
+    st.session_state.active_project_code=selected_code
+
+
+# ------- NEW PROJECT -----
 with st.form('New Project Information',clear_on_submit=True):
     st.subheader("Add a New Project")
     newcode = st.text_input('Billing Code',key='ti_newcode')
