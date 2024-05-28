@@ -5,6 +5,11 @@ import pandas as pd
 import string
 import datetime
 
+import firebase_admin
+from firebase_admin import firestore
+
+#from google.cloud import firestore
+
 # -------------------- development notes --------------------
 #  To run this from Pycharm, do this:
 #   1. open in PyCharm - (already here)
@@ -42,8 +47,43 @@ if 'active_project_code' not in st.session_state:
 
 # ================================== FUNCTIONS =========================================
 
+def GetProjects_cloud():
+
+    app = firebase_admin.initialize_app()
+    db = firestore.client()
+
+    # read
+    doc_ref = db.collection('tkeeper_collection').document("projects")
+    doc = doc_ref.get()
+    if doc.exists:
+        print('Got the document')
+        Projects = doc.to_dict()
+    else:
+        print('could not get the document called projects')
+
+    return Projects
+
+def Database_Project_Add(billcode, projectname):
+    app = firebase_admin.initialize_app()
+    db = firestore.client()
+
+    # add
+    doc_ref = db.collection("tkeeper_collection").document("projects")
+    doc_ref.set({"billcode": billcode, "projectname": projectname})
+
+def Database_Log_Add(log_record):
+    app = firebase_admin.initialize_app()
+    db = firestore.client()
+
+    # add
+    doc_ref = db.collection("tkeeper_collection").document("worklog")
+    doc_ref.set(log_record)
+
+
 @st.cache_data
 def GetProjects():
+
+    Projects_dict = GetProjects_cloud()
 
     records = []
     for i in range(0,10):
@@ -64,23 +104,31 @@ def GetProjects():
 
     return df
 
-def AddNewProject(newcode, newname):
-    print('code is ' + newcode + ' for new projet ' + newname)
-
-    # write the new code and project to the dataframe.
-    rec = {'code': newcode.strip('.'), 'name': newname}
 
 def AddEntry():
     # LOG billcode, time, and comments.
 
+    userid = ''
+
+    billcode = st.session_state.active_project_code
+    projectname = ''
+    comment = st.session_state.comment
+
+
     start = st.session_state.starttime
     stop = st.session_state.stoptime
-
+    theday = ''
+    elapsedtime = ''
+    userid = ''
     # elapsed = stop - start
     # elap_seconds = elapsed.total_seconds()
     # print('Worked for ' + str(int(elap_seconds)) + ' seconds on ' + st.session_state.comment)
 
-    # write this to the work log.
+    log_record = {"adate": billcode, "aday": theday, 'projectname':projectname, 'billcode': billcode, 'comment': comment,
+                  'elapsedtime': elapsedtime, 'userid': userid}
+
+    Database_Log_Add(log_record)
+
 
 def startworking():
     print('START WORKING!')
@@ -106,6 +154,7 @@ def stopworking():
 
     # LOG billcode, time, and comments.
     AddEntry()
+    Database_Log_Add()
 
 
 
@@ -227,6 +276,7 @@ with st.form('New Project Information',clear_on_submit=True):
             st.warning('code and name are required.')
         else:
             AddNewProject(newcode,newname)
+            Database_Project_Add(newcode, newname)
 
 
 # ===============================  MAIN  ===========================================
