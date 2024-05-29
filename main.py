@@ -8,7 +8,13 @@ import datetime
 import firebase_admin
 from firebase_admin import firestore
 
-#from google.cloud import firestore
+import firebase_admin
+from firebase_admin import credentials
+
+# THIS IS TO ALLOW ONLY ME TO ACCESS SINCE i HAVE THE CREDENTIALS CERTIFICATE.
+cred = credentials.Certificate(r'C:\Users\36352\PycharmProjects\Keeper\tkeeper-c0270-firebase-adminsdk-ou3gc-03d4e1ddde.json')
+firebase_admin.initialize_app(cred)
+
 
 # -------------------- development notes --------------------
 #  To run this from Pycharm, do this:
@@ -18,6 +24,28 @@ from firebase_admin import firestore
 #  4. on the app, set setting to "Run on Save"
 #
 # ---------------------------------------------------------
+
+#  THIS METHOD ALLOWS ANYONE WHO IS USING THE TKEEPER APPLICATION TO ACCESS.
+# Configuration key
+# firebaseConfig = {
+#     'apiKey'': "AIzaSyDMiFm1gWW2_XA6Ax9aFOmv_kfB1lDn3Y8",
+#     'authDomain': "tkeeper-c0270.firebaseapp.com",
+#     'projectId': "tkeeper-c0270",
+#     'databaseURL':'firebase-adminsdk-ou3gc@tkeeper-c0270.iam.gserviceaccount.com',
+#     'storageBucket'': "tkeeper-c0270.appspot.com",
+#     'messagingSenderId': "744297028887",
+#     'appId': "1:744297028887:web:84633b8788aad111402b52",
+#     'measurementId': "G-3RCJB966V0"
+# }
+#
+# # initialize the connection to the firestore database.
+# app = firebase_admin.initialize_app(firebaseConfig)
+
+
+
+db = firestore.client()
+
+
 
 # ================================== INIT  =========================================
 
@@ -49,11 +77,9 @@ if 'active_project_code' not in st.session_state:
 
 def GetProjects_cloud():
 
-    app = firebase_admin.initialize_app()
-    db = firestore.client()
 
     # read
-    doc_ref = db.collection('tkeeper_collection').document("projects")
+    doc_ref = db.collection('projects').document()
     doc = doc_ref.get()
     if doc.exists:
         print('Got the document')
@@ -64,19 +90,15 @@ def GetProjects_cloud():
     return Projects
 
 def Database_Project_Add(billcode, projectname):
-    app = firebase_admin.initialize_app()
-    db = firestore.client()
 
-    # add
-    doc_ref = db.collection("tkeeper_collection").document("projects")
-    doc_ref.set({"billcode": billcode, "projectname": projectname})
+    # add to the database
+    doc_ref = db.collection('projects').document()
+    doc_ref.set({'billcode': billcode, 'projectname': projectname})
 
 def Database_Log_Add(log_record):
-    app = firebase_admin.initialize_app()
-    db = firestore.client()
 
     # add
-    doc_ref = db.collection("tkeeper_collection").document("worklog")
+    doc_ref = db.collection('worklog').document()
     doc_ref.set(log_record)
 
 
