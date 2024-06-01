@@ -18,14 +18,16 @@ st.set_page_config(page_title='Report Times',
 
 
 # ================================== FUNCTIONS =========================================
-def GenerateTimeReport():
-    pass
+
 
 # ================================== CALLBACKS =========================================
-
+def GenerateTimeReport():
+    pass
 
 # ===============================  UI  ===========================================
 
 st.title('Report')
 
-st.button('Generate Report',on_click=GenerateTimeReport())
+st.button('Generate Report',
+          key='btn_report',
+          on_click=GenerateTimeReport)

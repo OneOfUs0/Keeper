@@ -1,4 +1,4 @@
-
+import  traceback, sys
 import streamlit as st
 import random
 import pandas as pd
@@ -7,13 +7,14 @@ import datetime
 
 import firebase_admin
 from firebase_admin import firestore
-
-import firebase_admin
 from firebase_admin import credentials
 
-# THIS IS TO ALLOW ONLY ME TO ACCESS SINCE i HAVE THE CREDENTIALS CERTIFICATE.
-cred = credentials.Certificate(r'C:\Users\36352\PycharmProjects\Keeper\tkeeper-c0270-firebase-adminsdk-ou3gc-03d4e1ddde.json')
-firebase_admin.initialize_app(cred)
+
+def ExceptHandler():
+    tb = sys.exc_info()[2]
+    tbinfo = traceback.format_tb(tb)[0]
+    pymsg = "PYTHON ERRORS:\nTraceback info:\n" + tbinfo + "\nError Info:\n" + str(sys.exc_info()[1])
+    print(pymsg)
 
 
 # -------------------- development notes --------------------
@@ -41,22 +42,26 @@ firebase_admin.initialize_app(cred)
 # # initialize the connection to the firestore database.
 # app = firebase_admin.initialize_app(firebaseConfig)
 
-
-
-db = firestore.client()
-
-
-
 # ================================== INIT  =========================================
 
+# Page
 st.set_page_config(page_title='Time Keeper Controls',page_icon=':stopwatch:',
                    menu_items={'About':'Created by Greg Nichols',
                                'Get Help':'https://somafm.com/dronezone/'})
 
 # initialize
+
+# FLOW CONTROL  -----------
 if 'status' not in st.session_state:
     st.session_state.status = 'You are not working'
     print('----> init status')
+
+if 'btn_stop_clicked' not in st.session_state:
+    st.session_state.btn_stop_clicked = False
+
+
+# VALUES   -----------
+
 if 'starttime' not in st.session_state:
     st.session_state.starttime = ''
 if 'stoptime' not in st.session_state:
@@ -72,242 +77,272 @@ if 'startstop_text' not in st.session_state:
 
 if 'active_project_code' not in st.session_state:
     st.session_state.active_project_code = '0'
+if 'active_project_name' not in st.session_state:
+    st.session_state.active_project_name = ''
+
+# DATABASE
+
+if 'app_initialized' not in st.session_state:
+    st.session_state.app_initialized = False
+
+# THIS IS TO ALLOW ONLY ME TO ACCESS SINCE I HAVE THE CREDENTIALS CERTIFICATE.
+cred = credentials.Certificate(r'C:\Users\36352\PycharmProjects\Keeper\tkeeper-c0270-firebase-adminsdk-ou3gc-03d4e1ddde.json')
+
+if not st.session_state.app_initialized:
+    app = firebase_admin.initialize_app(cred)
+    st.session_state.app_initialized = True
+
+db = firestore.client()
 
 # ================================== FUNCTIONS =========================================
-
+@st.cache_data
 def GetProjects_cloud():
+    try:
+        records = []
 
+        docs = db.collection('projects').get()
+        for doc in docs:
+            record = doc.to_dict()
+            records.append(record)
 
-    # read
-    doc_ref = db.collection('projects').document()
-    doc = doc_ref.get()
-    if doc.exists:
-        print('Got the document')
-        Projects = doc.to_dict()
-    else:
-        print('could not get the document called projects')
+        df = pd.DataFrame(records)
 
-    return Projects
+        return df
+    except:
+        ExceptHandler()
+
 
 def Database_Project_Add(billcode, projectname):
 
-    # add to the database
-    doc_ref = db.collection('projects').document()
-    doc_ref.set({'billcode': billcode, 'projectname': projectname})
+    try:
+        # add to the database
+        doc_ref = db.collection('projects').document()
+        doc_ref.set({'billcode': billcode, 'projectname': projectname})
 
-def Database_Log_Add(log_record):
-
-    # add
-    doc_ref = db.collection('worklog').document()
-    doc_ref.set(log_record)
+    except:
+        ExceptHandler()
 
 
 @st.cache_data
 def GetProjects():
+    try:
+        # Projects_dict = GetProjects_cloud()
 
-    Projects_dict = GetProjects_cloud()
+        records = []
+        for i in range(0,10):
+            code = ''
+            for cc in range(0,4):
+                for c in range(0,3):
+                    code += str(random.randint(2,99))
+                code += '.'
 
-    records = []
-    for i in range(0,10):
-        code = ''
-        for cc in range(0,4):
-            for c in range(0,3):
-                code += str(random.randint(2,99))
-            code += '.'
+            name = ''
+            for x in range(0,25):
+                name += list(string.ascii_lowercase)[random.randint(0,23)]
+            rec = {'billcode':code.strip('.'),'projectname':name}
 
-        name = ''
-        for x in range(0,25):
-            name += list(string.ascii_lowercase)[random.randint(0,23)]
-        rec = {'code':code.strip('.'),'name':name}
+            records.append(rec)
 
-        records.append(rec)
+        df = pd.DataFrame(records)
 
-    df = pd.DataFrame(records)
+        return df
+    except:
+        ExceptHandler()
 
-    return df
+def Database_Log_Add(log_record):
+    try:
+        # add
 
-
+        doc_ref = db.collection('worklog').document()
+        doc_ref.set(log_record)
+    except:
+        ExceptHandler()
 def AddEntry():
-    # LOG billcode, time, and comments.
+    try:
+        # LOG billcode, time, and comments.
 
-    userid = ''
+        userid = ''
 
-    billcode = st.session_state.active_project_code
-    projectname = ''
-    comment = st.session_state.comment
+        billcode = st.session_state.active_project_code
+        projectname = ''
+        comment = st.session_state.comment
+
+        start = st.session_state.starttime
+        stop = st.session_state.stoptime
+
+        thedate = stop.strftime('%m/%d/%Y')
+        theday = stop.strftime('%A')
+        td = stop - start
+        elap_minutes = td.seconds / 60
+        elapsedtime_hrs = elap_minutes / 60
+        elapsedtime = '{:.4f}'.format(elapsedtime_hrs)
+
+        userid = '36353'
+
+        # print('Worked for ' + str(int(elap_minutes)) + ' minutes on ' + st.session_state.comment)
+
+        log_record = {"adate": thedate, "aday": theday, 'projectname':projectname, 'billcode': billcode, 'comment': comment,
+                      'elapsedtime': elapsedtime, 'userid': userid}
+
+        print(str(log_record))
+
+        # COMMENT OUT FOR TESTING
+        if st.session_state.btn_stop_clicked == True:
+            Database_Log_Add(log_record)
 
 
-    start = st.session_state.starttime
-    stop = st.session_state.stoptime
-    theday = ''
-    elapsedtime = ''
-    userid = ''
-    # elapsed = stop - start
-    # elap_seconds = elapsed.total_seconds()
-    # print('Worked for ' + str(int(elap_seconds)) + ' seconds on ' + st.session_state.comment)
-
-    log_record = {"adate": billcode, "aday": theday, 'projectname':projectname, 'billcode': billcode, 'comment': comment,
-                  'elapsedtime': elapsedtime, 'userid': userid}
-
-    Database_Log_Add(log_record)
-
-
+    except:
+        ExceptHandler()
 def startworking():
-    print('START WORKING!')
+    try:
+        print('START WORKING!')
 
-    # status change
-    #st.session_state.startstop_text = 'Toggle to stop working'
-    # start time
-    st.session_state.starttime = datetime.datetime.now()
-    print('Started timer')
+        # start time
+        st.session_state.starttime = datetime.datetime.now()
 
+    except:
+        ExceptHandler()
 def stopworking():
-    print('STOPPED WORKING')
+    try:
+        print('STOPPED WORKING')
 
-    actcode = st.session_state.active_project_code
+        # stop time
+        st.session_state.stoptime = datetime.datetime.now()
 
+        # LOG billcode, time, and comments.
+        st.session_state.btn_stop_clicked = True
+        AddEntry()
+        st.session_state.btn_stop_clicked = False
 
-    # status change
-    #st.session_state.startstop_text = 'Toggle to start working'
-
-    # stop time
-    st.session_state.stoptime = datetime.datetime.now()
-    print('Stopped timer at ' + str(st.session_state.stoptime) + ' CODE: ' + actcode)
-
-    # LOG billcode, time, and comments.
-    AddEntry()
-    Database_Log_Add()
-
-
-
+    except:
+        ExceptHandler()
 # ================================== CALLBACKS =========================================
 
-def startstop_onclick(status):
-    pass
+def btn_click_ClearWork():
+    try:
+        docs = db.collection('worklog').get()
 
-    # if status == 'working':
-    #     print('STOPPING WORK')
-    #
-    #     # status change
-    #     st.session_state.status = 'resting'
-    #
-    #     # stop time
-    #     st.session_state.stoptime = datetime.datetime.now()
-    #     print('Stopped timer at ' + str(st.session_state.stoptime) )
-    #
-    #     # button text
-    #     st.session_state.startstop_text = 'Start'
-    #
-    #     # LOG
-    #     AddEntry()
-    #
-    # if status == 'resting':
-    #     print('STARTING WORK')
-    #
-    #     # status change
-    #     st.session_state.status = 'working'
-    #
-    #     # start time
-    #     st.session_state.starttime = datetime.datetime.now()
-    #     print('Started timer')
-    #
-    #
-    #     # button text
-    #     st.session_state.startstop_text = 'Stop'
+        for doc in docs:
+            key = doc.id
+            print(key)
+            db.collection('worklog').document(key).delete()
+
+    except:
+        ExceptHandler()
+
+def toggle_changed():
+    try:
+
+        if st.session_state.toggle_work == False:
+            print('Toggle turned off')
+            stopworking()
+        else:
+            print('Toggle turned on')
+            startworking()
+
+    except:
+        ExceptHandler()
 
 def comment_changed():
+    try:
 
-    thecomment = st.session_state.txt_comment
-    st.session_state.comment = thecomment
-    print('updated to ' + thecomment)
+        thecomment = st.session_state.txt_comment
+        st.session_state.comment = thecomment
+        print('updated to ' + thecomment)
 
+    except:
+        ExceptHandler()
 def data_editor_changed():
-    print('NEW SELECTION')
+    try:
+        print('NEW SELECTION')
 
-
+    except:
+        ExceptHandler()
 # ===============================  UI  ===========================================
+try:
+    st.title('Project Time Keeper')
 
-st.title('Project Time Keeper')
+    st.button('Dev - clear work history',
+              key='clearall',
+              on_click=btn_click_ClearWork)
 
-st.divider()
+    #st.divider()
 
-# ------- CONTROLS - StartStop, Comments -----
-st.subheader('Control work here.') #st.session_state.status)
+    # ------- COTROLS - StartStop, Comments -----
+    st.subheader('Control work here.') #st.session_state.status)
 
-#st.button(st.session_state.startstop_text,key='btn_startstop',on_click=startstop_onclick(st.session_state.status))
+    type(st.session_state['active_project_code'])
 
-type(st.session_state['active_project_code'])
-
-
-onoff = st.toggle('Working',key='toggle_work',
-                  disabled=False,
-                  help='Turn on when you start working.  Turn off when you stop working.')
-if onoff:
-    startworking()
-else:
-    stopworking()
-
-st.text_area('Comments',key='txt_comment', on_change=comment_changed(), max_chars=200,help='Type comments for this work.')
+    onoff = st.toggle('Working',key='toggle_work',
+                      disabled=False,
+                      help='Turn on when you start working.  Turn off when you stop working.',
+                      on_change=toggle_changed
+                      )
 
 
-# ------- PROJECTS -----
-st.subheader('Projects',help='Choose the project you will be working on.')
-
-#st.dataframe(GetProjects(),use_container_width=True)
-
-# get pandas dataframe
-df = GetProjects()
+    st.text_area('Comments',key='txt_comment', on_change=comment_changed, max_chars=200,help='Type comments for this work.')
 
 
-# Add a true/false field to the first column.
-df_selections = df.copy()
-df_selections.insert(0, "Apply to this", False)
-
-# configure the "Apply to this" column to have checkboxes
-column_config = {'Apply to this':st.column_config.CheckboxColumn(required=True)}
-
-# create the Data Editor
-edited_df = st.data_editor(df_selections,
-                           hide_index=True,
-                           column_config=column_config,
-                           disabled=['code','name'],  use_container_width=True,
-                           on_change=data_editor_changed()
-                           )
-
-# check for mulitple selections.
-sel_codes = edited_df.loc[edited_df['Apply to this']]["code"]
-if len(sel_codes) == 0:
-    st.session_state.active_project_code = '0'
-elif len(sel_codes) > 1:
-    st.warning('Select only one Project.')
-    st.session_state.active_project_code = '0'
-else:
-    selected_code = sel_codes.iloc[0]
-    # save to session
-    st.session_state.active_project_code=selected_code
+    # ------- PROJECTS -----
+    st.subheader('Projects',
+                 help='Choose the project you will be working on.')
 
 
-# ------- NEW PROJECT -----
-with st.form('New Project Information',clear_on_submit=True):
-    st.subheader("Add a New Project")
-    newcode = st.text_input('Billing Code',key='ti_newcode')
-    newname = st.text_input('Name (what you want to call it)',key='ti_newname')
-    submitted = st.form_submit_button('Submit')
-    if submitted:
-        if newcode == '' or newname == '':
-            st.warning('code and name are required.')
-        else:
-            AddNewProject(newcode,newname)
-            Database_Project_Add(newcode, newname)
+    # get pandas dataframe
+    #df = GetProjects()
+    df = GetProjects_cloud()
 
+    # Add a true/false field to the first column.
+    df_selections = df.copy()
+    df_selections.insert(0, "Apply to this", False)
+
+    # configure the "Apply to this" column to have checkboxes
+    column_config = {'Apply to this':st.column_config.CheckboxColumn(required=True)}
+
+    # create the Data Editor
+    edited_df = st.data_editor(df_selections,
+                               hide_index=True,
+                               column_config=column_config,
+                               disabled=['billcode','projectname'],  use_container_width=True,
+                               on_change=data_editor_changed
+                               )
+
+    # check for mulitple selections.
+    sel_codes = edited_df.loc[edited_df['Apply to this']]["billcode"]
+    sel_names = edited_df.loc[edited_df['Apply to this']]["projectname"]
+    if len(sel_codes) == 0:
+        st.session_state.active_project_code = '0'
+        st.session_state.active_project_name = ''
+    elif len(sel_codes) > 1:
+        st.warning('Select only one Project.')
+        st.session_state.active_project_code = '0'
+        st.session_state.active_project_name = ''
+    else:
+        # save to session
+        st.session_state.active_project_code=sel_codes.iloc[0]
+        st.session_state.active_project_name = sel_names.iloc[0]
+
+    # ------- NEW PROJECT -----
+    with st.form('New Project Information',clear_on_submit=True):
+        st.subheader("Add a New Project")
+        newcode = st.text_input('Billing Code',key='ti_newcode')
+        newname = st.text_input('Name (what you want to call it)',key='ti_newname')
+        submitted = st.form_submit_button('Submit')
+        if submitted:
+            if newcode == '' or newname == '':
+                st.warning('Billing Code and Name are required.')
+            else:
+                Database_Project_Add(newcode, newname)
+
+except:
+    ExceptHandler()
 
 # ===============================  MAIN  ===========================================
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-
-    print('---- MAIN ----')
-
-
-
+try:
+    # Press the green button in the gutter to run the script.
+    if __name__ == '__main__':
+        pass
+        #print('---- MAIN ----')
+except:
+    ExceptHandler()
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
