@@ -45,7 +45,8 @@ def ExceptHandler():
 # ================================== INIT  =========================================
 
 # Page
-st.set_page_config(page_title='Time Keeper Controls',page_icon=':stopwatch:',
+st.set_page_config(page_title='Time Keeper Controls',
+                   page_icon=':stopwatch:',
                    menu_items={'About':'Created by Greg Nichols',
                                'Get Help':'https://somafm.com/dronezone/'})
 
@@ -58,7 +59,6 @@ if 'status' not in st.session_state:
 
 if 'btn_stop_clicked' not in st.session_state:
     st.session_state.btn_stop_clicked = False
-
 
 # VALUES   -----------
 
@@ -273,7 +273,8 @@ try:
 
     type(st.session_state['active_project_code'])
 
-    onoff = st.toggle('Working',key='toggle_work',
+    onoff = st.toggle('Working',
+                      key='toggle_work',
                       disabled=False,
                       help='Turn on when you start working.  Turn off when you stop working.',
                       on_change=toggle_changed
@@ -303,7 +304,8 @@ try:
     edited_df = st.data_editor(df_selections,
                                hide_index=True,
                                column_config=column_config,
-                               disabled=['billcode','projectname'],  use_container_width=True,
+                               disabled=['billcode','projectname'],
+                               use_container_width=True,
                                on_change=data_editor_changed
                                )
 
