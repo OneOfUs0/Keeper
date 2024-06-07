@@ -17,6 +17,7 @@ def ExceptHandler():
 
 
 st.set_page_config(page_title='Report Times',
+                   layout="wide",
                    page_icon=':stopwatch:',
                    menu_items={
                        'Report a Bug':'https://www.google.com/appserve/security-bugs/m2/new',
@@ -46,8 +47,13 @@ db = firestore.client()
 def GetWorkRecords():
     try:
 
+        start_ord = st.session_state.startdate.toordinal()
+        end_ord = st.session_state.enddate.toordinal()
+
+
         # Get records from the database.
-        docs = db.collection('worklog').get()
+        #docs = db.collection('worklog').get()
+        docs = db.collection('worklog').where('date_ord','>=',start_ord).where('date_ord','<=',end_ord).get()
         dbrecords = []
         for doc in docs:
             rec = doc.to_dict()
@@ -125,7 +131,6 @@ def CreateRandomRecords():
 # ================================== CALLBACKS =========================================
 def GenerateTimeReport():
     try:
-
         #records = CreateRandomRecords()
         records = GetWorkRecords()
 
@@ -140,12 +145,20 @@ def GenerateTimeReport():
 
 st.title('Report')
 
-st.button('Generate Report',
-          key='btn_report',
-          on_click=GenerateTimeReport)
+col1, col2, col3 = st.columns([1,1,1])
+
+with col1:
+    st.button('Generate Report',
+              key='btn_report',
+              on_click=GenerateTimeReport)
+with col2:
+    st.date_input('Start Date',
+                  key='startdate')
+with col3:
+    st.date_input('End Date',
+                  key='enddate')
 
 
 # create the Data Frame
-DataframeReport = st.dataframe(st.session_state.reportdf,
-             use_container_width=True
-             )
+st.dataframe(st.session_state.reportdf,
+             use_container_width=True)
