@@ -1,4 +1,4 @@
-import  traceback, sys
+import  traceback, sys, os
 import random
 import pandas as pd
 import string
@@ -13,13 +13,21 @@ from firebase_admin import credentials
 import streamlit as st
 # from streamlit import st.experimental_dialog
 
+# THIS IS TO ALLOW ONLY ME TO ACCESS SINCE I HAVE THE CREDENTIALS CERTIFICATE.
+# r'C:\Users\36352\PycharmProjects\Keeper\tkeeper-c0270-firebase-adminsdk-ou3gc-03d4e1ddde.json'
+
+#CertFolder = r'C:\Users\36352\PycharmProjects\Keeper'
+#FIREBASE_CERTIFICATE_FILE = os.path.join(CertFolder,'tkeeper-c0270-firebase-adminsdk-ou3gc-03d4e1ddde.json')
+
+CertFolder = r'C:\firebase'
+FIREBASE_CERTIFICATE_FILE = os.path.join(CertFolder,'tkeeper_firebase_cert.json')
+
 
 def ExceptHandler():
     tb = sys.exc_info()[2]
     tbinfo = traceback.format_tb(tb)[0]
     pymsg = "PYTHON ERRORS:\nTraceback info:\n" + tbinfo + "\nError Info:\n" + str(sys.exc_info()[1])
     print(pymsg)
-
 
 # -------------------- development notes --------------------
 #  To run this from Pycharm, do this:
@@ -66,7 +74,6 @@ if 'btn_stop_clicked' not in st.session_state:
     st.session_state.btn_stop_clicked = False
 
 # VALUES   -----------
-
 if 'df_projects' not in st.session_state:
     df = pd.DataFrame()
     st.session_state.df_projects = df
@@ -90,19 +97,53 @@ if 'active_project_code' not in st.session_state:
 if 'active_project_name' not in st.session_state:
     st.session_state.active_project_name = ''
 
-# DATABASE
+if 'collection_present' not in st.session_state:
+    st.session_state.collection_present = False
 
+# DATABASE  -------------
 if 'app_initialized' not in st.session_state:
     st.session_state.app_initialized = False
 
-# THIS IS TO ALLOW ONLY ME TO ACCESS SINCE I HAVE THE CREDENTIALS CERTIFICATE.
-cred = credentials.Certificate(r'C:\Users\36352\PycharmProjects\Keeper\tkeeper-c0270-firebase-adminsdk-ou3gc-03d4e1ddde.json')
 
-if not st.session_state.app_initialized:
-    app = firebase_admin.initialize_app(cred)
-    st.session_state.app_initialized = True
+if not os.path.exists(FIREBASE_CERTIFICATE_FILE):
+    print('Firebase Certificate file not found.  You must first get access to Firebase.')
+    st.session_state.app_initialized = False
+    # force the setup page to open and disable sidebar navigation.
+    st.switch_page('pages/setup.py')
+else:
+    cred = credentials.Certificate(FIREBASE_CERTIFICATE_FILE)
+    if not st.session_state.app_initialized:
+        app = firebase_admin.initialize_app(cred)
+        st.session_state.app_initialized = True
+    db = firestore.client()
 
-db = firestore.client()
+# check for database collections and documents.
+# Create if missing.
+if st.session_state.app_initialized and not st.session_state.collection_present:
+
+    # test if "projects" collection.
+    colref = db.collection('projects')
+    if colref is not None:
+        st.session_state.collection_present = True
+    else:
+
+        # PROJECTS
+        doc_ref = db.collection('projects').document()
+        doc_ref.set({'billcode': 0, 'projectname': '0'})
+
+        # WORKLOG
+        doc_ref = db.collection('worklog').document()
+        now = datetime.datetime.now()
+        date_ord = now.toordinal()
+        adate = now.strftime('%m/%d/%Y')
+        theday = now.strftime('%A')
+
+        log_record = {'date_ord': date_ord, 'adate': adate, '': theday, 'projectname': '',
+                      'billcode': '0', 'comment': '',
+                      'elapsedtime': 0, 'userid': 0}
+        doc_ref.set(log_record)
+
+        st.session_state.collection_present = True
 
 
 # NOTE: this is CACHED
