@@ -23,11 +23,14 @@ try:
         st.header('Setup Required ')
         #st.subheader('Setup Required ')
 
-        st.markdown('**Required** setup steps.   This application uses Firebase to store your project\'s information and your work history.')
+        st.markdown('This application uses a cloud database called ***Firestore***, which is part of ***Firebase***, '
+                    'to store your project\'s information and your work history.   You will need to use your Google '
+                    'account to create this initial database and grant access to this application.  '  
+                    'Please follow these steps.')
 
         PPH1 = '''**Sign into Google and Firebase**  
         First open your web browser and, if you are not yet signed in, sign into your google account. 
-        Next search for ***Firebase Console*** and click on the Firebase Console link (http://console.firebase.google.com) . 
+        Next search for ***Firebase Console*** and click on the Firebase Console link  or click here: http://console.firebase.google.com. 
         '''
 
         PPH2 = '''

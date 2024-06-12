@@ -13,14 +13,10 @@ from firebase_admin import credentials
 import streamlit as st
 # from streamlit import st.experimental_dialog
 
-# THIS IS TO ALLOW ONLY ME TO ACCESS SINCE I HAVE THE CREDENTIALS CERTIFICATE.
-# r'C:\Users\36352\PycharmProjects\Keeper\tkeeper-c0270-firebase-adminsdk-ou3gc-03d4e1ddde.json'
-
-#CertFolder = r'C:\Users\36352\PycharmProjects\Keeper'
-#FIREBASE_CERTIFICATE_FILE = os.path.join(CertFolder,'tkeeper-c0270-firebase-adminsdk-ou3gc-03d4e1ddde.json')
 
 CertFolder = r'C:\firebase'
 FIREBASE_CERTIFICATE_FILE = os.path.join(CertFolder,'tkeeper_firebase_cert.json')
+
 
 
 def ExceptHandler():
@@ -334,7 +330,63 @@ def comment_changed():
         ExceptHandler()
 def data_editor_changed():
     try:
-        print('NEW PROJECT SELECTION')
+
+        print('Editor Changed Event')
+
+        edited_df = st.session_state.data_edit_projects # returns a dictionary
+
+        print(' ')
+        print('edited df')
+        print(edited_df)
+        print('')
+
+        # find which records are true
+        true_indexes,false_indexes = [],[]
+        for idx in edited_df['edited_rows']:
+            row = edited_df['edited_rows'][idx]
+            if row['Select'] == True:
+                true_indexes.append(idx)
+            else:
+                false_indexes.append(idx)
+
+        # Change the underlying pandas dataframe.
+        df = st.session_state.df_projects
+        D = df.to_dict(orient='records')
+        for idx in true_indexes:
+            D[idx]['Select'] = True
+        for idx in false_indexes:
+            D[idx]['Select'] = False
+
+
+        # save to session state
+        st.session_state.df_projects = pd.DataFrame(D)
+
+        print('DF')
+        print(st.session_state.df_projects)
+
+
+
+        # check for mulitple selections.
+        # sel_codes = edited_df.loc[edited_df['Select']]["billcode"]
+        # sel_names = edited_df.loc[edited_df['Select']]["projectname"]
+
+        if len(true_indexes) == 0:
+            st.session_state.active_project_code = '0'
+            st.session_state.active_project_name = ''
+        elif len(true_indexes) > 1:
+            st.warning('Select only one project.', icon=":material/warning:")
+            st.session_state.active_project_code = '0'
+            st.session_state.active_project_name = 'none'
+        else:
+            # save project and name to session state
+            df = st.session_state.df_projects
+            D = df.to_dict(orient='records')
+
+            idx = true_indexes[0]
+
+            st.session_state.active_project_name = D[idx]['projectname']
+            st.session_state.active_project_code = D[idx]['billcode']
+
 
     except:
         ExceptHandler()
@@ -342,14 +394,28 @@ def data_editor_changed():
 def btnClearSelected_Click():
     try:
 
-        df = st.session_state.data_edit_projects #returns a dictionary
+        df = st.session_state.df_projects #returns a Pandas Dataframe!!!!
 
-        for id in df['edited_rows']:
-            df['edited_rows'][id]['Select'] = False
+        D = df.to_dict(orient='records')  # this is a list of dicts.
+        for rec in D:
+            print('start: ' + str(rec))
 
+        if type(D) is dict:
+            print('DICTIONARY')
+        else:
+            print(type(D))
+        print(D)
+
+        for rec in D:
+            print('record: ' + str(rec))
+
+        for idx in range(0,len(D)):
+            D[idx]['Select'] = False
+
+        # back to a pandas dataframe
+        df = pd.DataFrame(D)
         st.session_state.df_projects = df
 
-        print(df)
 
         # TODO
         # Need to refresh the data editor widget.
@@ -441,35 +507,29 @@ try:
         st.button('New Week (clear history)',
                   key='clearall',
                   on_click=btn_click_ClearWork,
-                  help='Use with caution.  This will erase all your previous work history.')
+                  help='Use with caution.  This will erase all your previous work history!')
 
     #st.divider()
 
     # ------- PROJECTS -----
 
-    # SUBHEADER
-    #st.subheader('Choose the Project:',
-     #            help='Choose the project you will be working on.')
-
-
-    # get pandas dataframe
-    #df = GetProjectsRandom()
-    df = GetProjects_cloud()
-    #df = st.session_state.df_projects
-
-    # Add a true/false field to the first column.
-    df_selections = df.copy()
-    df_selections.insert(0, "Select", False)
-    st.session_state.df_projects = df_selections
-
-    # configure the "Apply to this" column to have checkboxes
-    column_config = {'Apply to this':st.column_config.CheckboxColumn(required=True)}
-
     column1, column2 = st.columns([10, 1])
 
     with column1:
 
-        #DATA EDITOR     ['billcode','projectname'],
+        # Get project data from the cloud database.
+        # df = GetProjectsRandom()
+        df = GetProjects_cloud()
+
+        # Add a true/false field to the first column.
+        df_selections = df.copy()
+        df_selections.insert(0, "Select", False)
+        st.session_state.df_projects = df_selections
+
+        # configure the "Apply to this" column to have checkboxes
+        column_config = {'Apply to this': st.column_config.CheckboxColumn(required=True)}
+
+        #DATA EDITOR
         edited_df = st.data_editor(st.session_state.df_projects,
                                    key='data_edit_projects',
                                    hide_index=True,
@@ -479,36 +539,22 @@ try:
                                    disabled=bool(st.session_state.status == 'work')
                                    )
 
-    # check for mulitple selections.
-    sel_codes = edited_df.loc[edited_df['Select']]["billcode"]
-    sel_names = edited_df.loc[edited_df['Select']]["projectname"]
-    if len(sel_codes) == 0:
-        st.session_state.active_project_code = '0'
-        st.session_state.active_project_name = 'none'
-    elif len(sel_codes) > 1:
-        st.warning('Select only one project.',icon=":material/warning:")
-        st.session_state.active_project_code = '0'
-        st.session_state.active_project_name = 'none'
-    else:
-        # save to session state
-        st.session_state.active_project_code = sel_codes.iloc[0]
-        st.session_state.active_project_name = sel_names.iloc[0]
 
     with column2:
 
         subcont = st.container()
 
         with subcont:
-            # BUTTON
+            # BUTTONS
             btndisabled_Delete = (st.session_state.status == 'work') or (st.session_state.active_project_code == '0')
-            btndisabled_Clear = len(sel_codes) == 0
-
             st.button('Delete',
                       key='btnDeleteSelected',
                       help='Delete the project you selected.',
                       on_click=DeleteSelectedProject,
                       disabled=btndisabled_Delete)
                       #icon=":material/delete:")
+
+            btndisabled_Clear = len(st.session_state.data_edit_projects) == 0
             st.button('Clear',
                       key='btnClearSelected',
                       help='Clear selected projects.',
@@ -560,11 +606,9 @@ try:
 
     col1, col2 = st.columns([4, 1])
 
-    st.session_state.active_project_name = 'This and That'
-
     with col1:
         # HEADER
-        st.subheader(st.session_state.active_project_code,
+        st.subheader(st.session_state.active_project_name,
                      help='The chosen project.')
         # st.subheader('Controls')  # st.session_state.status)
 
