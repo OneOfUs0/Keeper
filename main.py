@@ -65,86 +65,112 @@ st.set_page_config(page_title='Time Keeper Controls',
 
 # initialize
 
-# FLOW CONTROL  -----------
-if 'status' not in st.session_state:
-    st.session_state.status = 'You are not working'
-    print('----> init status')
+try:
 
-if 'btn_stop_clicked' not in st.session_state:
-    st.session_state.btn_stop_clicked = False
+    # FLOW CONTROL  -----------
+    if 'status' not in st.session_state:
+        st.session_state.status = 'You are not working'
+        print('----> init status')
 
-# VALUES   -----------
-if 'df_projects' not in st.session_state:
-    df = pd.DataFrame()
-    st.session_state.df_projects = df
+    if 'btn_stop_clicked' not in st.session_state:
+        st.session_state.btn_stop_clicked = False
 
-if 'starttime' not in st.session_state:
-    st.session_state.starttime = ''
-if 'stoptime' not in st.session_state:
-    st.session_state.stoptime = ''
+    # VALUES   -----------
+    if 'df_projects' not in st.session_state:
+        df = pd.DataFrame()
+        st.session_state.df_projects = df
 
-if 'comment' not in st.session_state:
-    st.session_state.comment = ''
-if 'txt_comment' not in st.session_state:
-    st.session_state.txt_comment = ''
+    if 'starttime' not in st.session_state:
+        st.session_state.starttime = ''
+    if 'stoptime' not in st.session_state:
+        st.session_state.stoptime = ''
 
-if 'status' not in st.session_state:
-    st.session_state.status = 'rest'
+    if 'comment' not in st.session_state:
+        st.session_state.comment = ''
+    if 'txt_comment' not in st.session_state:
+        st.session_state.txt_comment = ''
 
-if 'active_project_code' not in st.session_state:
-    st.session_state.active_project_code = '0'
+    if 'status' not in st.session_state:
+        st.session_state.status = 'rest'
 
-if 'active_project_name' not in st.session_state:
-    st.session_state.active_project_name = ''
+    if 'active_project_code' not in st.session_state:
+        st.session_state.active_project_code = '0'
 
-if 'collection_present' not in st.session_state:
-    st.session_state.collection_present = False
+    if 'active_project_name' not in st.session_state:
+        st.session_state.active_project_name = ''
 
-# DATABASE  -------------
-if 'app_initialized' not in st.session_state:
-    st.session_state.app_initialized = False
+    if 'collection_present' not in st.session_state:
+        st.session_state.collection_present = False
+
+    # DATABASE  -------------
+    if 'app_initialized' not in st.session_state:
+        st.session_state.app_initialized = False
 
 
-if not os.path.exists(FIREBASE_CERTIFICATE_FILE):
-    print('Firebase Certificate file not found.  You must first get access to Firebase.')
-    st.session_state.app_initialized = False
-    # force the setup page to open and disable sidebar navigation.
-    st.switch_page('pages/setup.py')
-else:
-    cred = credentials.Certificate(FIREBASE_CERTIFICATE_FILE)
-    if not st.session_state.app_initialized:
-        app = firebase_admin.initialize_app(cred)
-        st.session_state.app_initialized = True
-    db = firestore.client()
-
-# check for database collections and documents.
-# Create if missing.
-if st.session_state.app_initialized and not st.session_state.collection_present:
-
-    # test if "projects" collection.
-    colref = db.collection('projects')
-    if colref is not None:
-        st.session_state.collection_present = True
+    if not os.path.exists(FIREBASE_CERTIFICATE_FILE):
+        print('Firebase Certificate file not found.  You must first get access to Firebase.')
+        st.session_state.app_initialized = False
+        # force the setup page to open and disable sidebar navigation.
+        st.switch_page('pages/setup.py')
     else:
+        cred = credentials.Certificate(FIREBASE_CERTIFICATE_FILE)
+        if not st.session_state.app_initialized:
+            app = firebase_admin.initialize_app(cred)
+            st.session_state.app_initialized = True
+        db = firestore.client()
 
-        # PROJECTS
-        doc_ref = db.collection('projects').document()
-        doc_ref.set({'billcode': 0, 'projectname': '0'})
+    # check for database collections and documents.
+    # Create if missing.
+    if st.session_state.app_initialized and not st.session_state.collection_present:
 
-        # WORKLOG
-        doc_ref = db.collection('worklog').document()
-        now = datetime.datetime.now()
-        date_ord = now.toordinal()
-        adate = now.strftime('%m/%d/%Y')
-        theday = now.strftime('%A')
+        print('CHECKING FOR EXISTING COLLECTIONS AND DOCUMENTS')
 
-        log_record = {'date_ord': date_ord, 'adate': adate, '': theday, 'projectname': '',
-                      'billcode': '0', 'comment': '',
-                      'elapsedtime': 0, 'userid': 0}
-        doc_ref.set(log_record)
+        # test if "projects" collection.
+        cols = db.collections()
 
-        st.session_state.collection_present = True
+        found = False
+        for col in cols:
+            if col.id == 'projects':
+                found = True
+        if found:
+            st.session_state.collection_present = True
+        else:
 
+            # PROJECTS
+            print('Creating the projects collection.')
+            doc_ref = db.collection('projects').document()
+            doc_ref.set({'billcode': 0, 'projectname': '0'})
+
+            # WORKLOG
+            print('Creating the worklog collection.')
+            doc_ref = db.collection('worklog').document()
+            now = datetime.datetime.now()
+            date_ord = now.toordinal()
+            adate = now.strftime('%m/%d/%Y')
+            theday = now.strftime('%A')
+
+            log_record = {'date_ord': date_ord, 'adate': adate, 'none': theday, 'projectname': 'none',
+                          'billcode': '0', 'comment': 'none',
+                          'elapsedtime': 0, 'userid': 0}
+            doc_ref.set(log_record)
+
+            # # delete the bogus project and work document.
+            # docs = db.collection('projects').get()
+            # docid = '0'
+            # for doc in docs:
+            #     docid = doc.id
+            # db.collection('projects').document(docid).delete()
+            #
+            # docs = db.collection('worklog').get()
+            # docid = '0'
+            # for doc in docs:
+            #     docid = doc.id
+            # db.collection('worklog').document(docid).delete()
+
+            st.session_state.collection_present = True
+
+except:
+    ExceptHandler()
 
 # NOTE: this is CACHED
 @st.cache_data
@@ -174,8 +200,11 @@ def Database_Project_Add(billcode, projectname):
 
         #Trigger a refresh of the data editor widget.
         GetProjects_cloud()
-        st.rerun()
 
+        # clear the cache for this funciton
+        GetProjects_cloud.clear()
+
+        st.rerun()
 
     except:
         ExceptHandler()
@@ -309,6 +338,25 @@ def data_editor_changed():
 
     except:
         ExceptHandler()
+
+def btnClearSelected_Click():
+    try:
+
+        df = st.session_state.data_edit_projects #returns a dictionary
+
+        for id in df['edited_rows']:
+            df['edited_rows'][id]['Select'] = False
+
+        st.session_state.df_projects = df
+
+        print(df)
+
+        # TODO
+        # Need to refresh the data editor widget.
+        #st.session_state.data_edit_projects.refresh()
+
+    except:
+        ExceptHandler()
 def DeleteSelectedProject():
     try:
         billcode = st.session_state.active_project_code
@@ -327,8 +375,9 @@ def DeleteSelectedProject():
                 print('Deleted document id' + docid)
 
         # trigger a refresh of the projects data editor
+        GetProjects_cloud.clear()
         st.rerun()
-        #GetProjects_cloud()
+
 
     except:
         ExceptHandler()
@@ -384,7 +433,7 @@ try:
 
     with tittlecol1:
         # TITLE
-        st.subheader('Project Time Keeper')
+        st.header('Project Time Keeper')
 
 
     with tittlecol2:
@@ -406,11 +455,13 @@ try:
     # get pandas dataframe
     #df = GetProjectsRandom()
     df = GetProjects_cloud()
-    df = st.session_state.df_projects
+    #df = st.session_state.df_projects
 
     # Add a true/false field to the first column.
     df_selections = df.copy()
     df_selections.insert(0, "Select", False)
+    st.session_state.df_projects = df_selections
+
     # configure the "Apply to this" column to have checkboxes
     column_config = {'Apply to this':st.column_config.CheckboxColumn(required=True)}
 
@@ -419,7 +470,8 @@ try:
     with column1:
 
         #DATA EDITOR     ['billcode','projectname'],
-        edited_df = st.data_editor(df_selections,
+        edited_df = st.data_editor(st.session_state.df_projects,
+                                   key='data_edit_projects',
                                    hide_index=True,
                                    column_config=column_config,
                                    use_container_width=True,
@@ -434,7 +486,7 @@ try:
         st.session_state.active_project_code = '0'
         st.session_state.active_project_name = 'none'
     elif len(sel_codes) > 1:
-        st.warning('Select only one Project.')
+        st.warning('Select only one project.',icon=":material/warning:")
         st.session_state.active_project_code = '0'
         st.session_state.active_project_name = 'none'
     else:
@@ -448,19 +500,28 @@ try:
 
         with subcont:
             # BUTTON
-            btndisabled = (st.session_state.status == 'work') or (st.session_state.active_project_code == '0')
-            st.button('Delete Selected Project',
-                      key='btnClearSelected',
+            btndisabled_Delete = (st.session_state.status == 'work') or (st.session_state.active_project_code == '0')
+            btndisabled_Clear = len(sel_codes) == 0
+
+            st.button('Delete',
+                      key='btnDeleteSelected',
                       help='Delete the project you selected.',
                       on_click=DeleteSelectedProject,
-                      disabled=btndisabled)
+                      disabled=btndisabled_Delete)
+                      #icon=":material/delete:")
+            st.button('Clear',
+                      key='btnClearSelected',
+                      help='Clear selected projects.',
+                      on_click=btnClearSelected_Click,
+                      disabled=btndisabled_Clear
+                      )
 
 
-            st.button(':red-background[Add Another Project - Experimental WIP]',
-                      key='btnAddProject',
-                      help='Add a new project and billcode.',
-                      disabled=bool(st.session_state.status == 'work'),
-                      on_click=btnAddProject_click)
+            # st.button(':red-background[Add Another Project - Experimental WIP]',
+            #           key='btnAddProject',
+            #           help='Add a new project and billcode.',
+            #           disabled=bool(st.session_state.status == 'work'),
+            #           on_click=btnAddProject_click)
 
             # if st.session_state.btnAddProject:
             #     NewProject_modal()

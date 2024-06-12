@@ -143,7 +143,7 @@ def GenerateTimeReport():
 
 # ===============================  UI  ===========================================
 
-st.title('Report')
+st.header('Report')
 
 col1, col2, col3 = st.columns([1,1,1])
 
