@@ -1,7 +1,6 @@
 import streamlit as st
-import random
 import pandas as pd
-import string
+import string, os, random
 import datetime
 import  traceback, sys
 
@@ -9,12 +8,13 @@ import firebase_admin
 from firebase_admin import firestore
 from firebase_admin import credentials
 
+from configparser import *
+
 def ExceptHandler():
     tb = sys.exc_info()[2]
     tbinfo = traceback.format_tb(tb)[0]
     pymsg = "PYTHON ERRORS:\nTraceback info:\n" + tbinfo + "\nError Info:\n" + str(sys.exc_info()[1])
     print(pymsg)
-
 
 st.set_page_config(page_title='Report Times',
                    layout="wide",
@@ -25,19 +25,46 @@ st.set_page_config(page_title='Report Times',
                        'About':'Created by Greg Nichols'
                    })
 
+def SetStartEndofWeek():
+    try:
+        today = datetime.date.today()
+        daysofweek = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+        #                0       1         2            3         4        5          6
+        idx = -1 * today.weekday()
+        tdelta = datetime.timedelta(days=idx)
+        startweek = today + tdelta
+
+        # End
+        idx = 6 - today.weekday()
+        tdelta = datetime.timedelta(days=idx)
+        endweek = today + tdelta
+
+        # save
+        st.session_state.startweek = startweek
+        st.session_state.endweek = endweek
+    except:
+        ExceptHandler()
+
 # ================================== INIT  =========================================
 
 if 'reportdf' not in st.session_state:
     st.session_state.reportdf = pd.DataFrame()
 
+if 'startweek' not in st.session_state:
+    st.session_state.startweek = datetime.date.today()
+    SetStartEndofWeek()
+if 'endweek' not in st.session_state:
+    st.session_state.endweek = datetime.date.today()
+    SetStartEndofWeek()
+
 if 'app_initialized' not in st.session_state:
     st.session_state.app_initialized = False
 
-# THIS IS TO ALLOW ONLY ME TO ACCESS SINCE I HAVE THE CREDENTIALS CERTIFICATE.
-cred = credentials.Certificate(r'C:\Users\36352\PycharmProjects\Keeper\tkeeper-c0270-firebase-adminsdk-ou3gc-03d4e1ddde.json')
+CertFolder = r'C:\firebase'
+FIREBASE_CERTIFICATE_FILE = os.path.join(CertFolder,'tkeeper_firebase_cert.json')
 
 if not st.session_state.app_initialized:
-    app = firebase_admin.initialize_app(cred)
+    app = firebase_admin.initialize_app(FIREBASE_CERTIFICATE_FILE)
     st.session_state.app_initialized = True
 
 db = firestore.client()
@@ -46,10 +73,8 @@ db = firestore.client()
 
 def GetWorkRecords():
     try:
-
         start_ord = st.session_state.startdate.toordinal()
         end_ord = st.session_state.enddate.toordinal()
-
 
         # Get records from the database.
         #docs = db.collection('worklog').get()
@@ -89,7 +114,6 @@ def GetWorkRecords():
                     comments = Totals[day][billcode]['comment']
                     rec = {'Day':day,'Billingcode':billcode,'Time':time,'Comments':comments}
                     records.append(rec)
-
 
         return records
     except:
@@ -141,6 +165,29 @@ def GenerateTimeReport():
     except:
         ExceptHandler()
 
+def ConfigToCSV():
+    try:
+
+        inifile = r"C:\GN\Python\Greg_Solutions\keeper\Python38\config_ini.txt"
+        outputfile = r'C:\GN\Python\Greg_Solutions\keeper\Python38\projects.txt'
+
+        config = ConfigParser()
+        config.read(inifile)
+
+        with open(outputfile, 'w') as fu:
+
+            fu.write('billcode,projectname' + '\n')
+
+            for section in config.sections():
+                projectname = section
+                billcode = config.get(section, 'number')
+
+                fu.write(billcode + ',' + projectname + '\n')
+
+
+    except:
+        ExceptHandler()
+
 # ===============================  UI  ===========================================
 
 st.header('Report')
@@ -153,12 +200,17 @@ with col1:
               on_click=GenerateTimeReport)
 with col2:
     st.date_input('Start Date',
+                  value=st.session_state.startweek,
                   key='startdate')
 with col3:
     st.date_input('End Date',
+                  value=st.session_state.endweek,
                   key='enddate')
 
 
 # create the Data Frame
 st.dataframe(st.session_state.reportdf,
              use_container_width=True)
+
+# st.button('convert config to csv.',
+#           on_click=ConfigToCSV)

@@ -12,12 +12,14 @@ from firebase_admin import credentials
 
 import streamlit as st
 # from streamlit import st.experimental_dialog
-
+from io import StringIO
 
 CertFolder = r'C:\firebase'
 FIREBASE_CERTIFICATE_FILE = os.path.join(CertFolder,'tkeeper_firebase_cert.json')
 
-
+def Refresh():
+    GetProjects_cloud.clear()
+    st.rerun()
 
 def ExceptHandler():
     tb = sys.exc_info()[2]
@@ -28,27 +30,11 @@ def ExceptHandler():
 # -------------------- development notes --------------------
 #  To run this from Pycharm, do this:
 #   1. open in PyCharm - (already here)
-#  2.  go to the Terminal and cd to this folder.
+#  2.  go to the Terminal tab.
 #  3. type "streamlit run main.py"
 #  4. on the app, set setting to "Run on Save"
 #
 # ---------------------------------------------------------
-
-#  THIS METHOD ALLOWS ANYONE WHO IS USING THE TKEEPER APPLICATION TO ACCESS.
-# Configuration key
-# firebaseConfig = {
-#     'apiKey'': "AIzaSyDMiFm1gWW2_XA6Ax9aFOmv_kfB1lDn3Y8",
-#     'authDomain': "tkeeper-c0270.firebaseapp.com",
-#     'projectId': "tkeeper-c0270",
-#     'databaseURL':'firebase-adminsdk-ou3gc@tkeeper-c0270.iam.gserviceaccount.com',
-#     'storageBucket'': "tkeeper-c0270.appspot.com",
-#     'messagingSenderId': "744297028887",
-#     'appId': "1:744297028887:web:84633b8788aad111402b52",
-#     'measurementId': "G-3RCJB966V0"
-# }
-#
-# # initialize the connection to the firestore database.
-# app = firebase_admin.initialize_app(firebaseConfig)
 
 # ================================== INIT  =========================================
 
@@ -56,10 +42,9 @@ def ExceptHandler():
 st.set_page_config(page_title='Time Keeper Controls',
                    layout="wide",
                    page_icon=':stopwatch:',
-                   menu_items={'About':'Created by Greg Nichols',
+                   menu_items={'About':'Created by Greg Nichols, June 2024',
                                'Get Help':'https://somafm.com/dronezone/'})
 
-# initialize
 
 try:
 
@@ -180,13 +165,10 @@ def GetProjects_cloud():
             records.append(record)
 
         df = pd.DataFrame(records)
-
         st.session_state.df_projects = df
-
         return df
     except:
         ExceptHandler()
-
 
 def Database_Project_Add(billcode, projectname):
     try:
@@ -194,23 +176,17 @@ def Database_Project_Add(billcode, projectname):
         doc_ref = db.collection('projects').document()
         doc_ref.set({'billcode': billcode, 'projectname': projectname})
 
-        #Trigger a refresh of the data editor widget.
-        GetProjects_cloud()
+        Refresh()
 
-        # clear the cache for this funciton
-        GetProjects_cloud.clear()
-
-        st.rerun()
-
+        # clear the cache for this function
+        #GetProjects_cloud.clear()
+        #st.rerun()
     except:
         ExceptHandler()
-
 
 @st.cache_data
 def GetProjectsRandom():
     try:
-        # Projects_dict = GetProjects_cloud()
-
         records = []
         for i in range(0,10):
             code = ''
@@ -306,6 +282,8 @@ def stopworking():
 
     except:
         ExceptHandler()
+
+
 # ================================== CALLBACKS =========================================
 
 def btn_click_ClearWork():
@@ -328,101 +306,54 @@ def comment_changed():
 
     except:
         ExceptHandler()
-def data_editor_changed():
+def GetTrueFalseIndexes(adict):
     try:
+        #print(adict)
 
-        print('Editor Changed Event')
-
-        edited_df = st.session_state.data_edit_projects # returns a dictionary
-
-        print(' ')
-        print('edited df')
-        print(edited_df)
-        print('')
-
-        # find which records are true
+       # find which records are true
         true_indexes,false_indexes = [],[]
-        for idx in edited_df['edited_rows']:
-            row = edited_df['edited_rows'][idx]
-            if row['Select'] == True:
+
+        for idx in adict:
+            if adict[idx]['Select'] == True:
                 true_indexes.append(idx)
             else:
                 false_indexes.append(idx)
 
-        # Change the underlying pandas dataframe.
+
+        # for idx in adict['edited_rows']:
+        #     row = adict['edited_rows'][idx]
+        #     if row['Select'] == True:
+        #         true_indexes.append(idx)
+        #         print('True is ' + str(idx))
+        #     else:
+        #         false_indexes.append(idx)
+
+        return {'true':true_indexes, 'false':false_indexes}
+    except:
+        ExceptHandler()
+
+
+
+def dataframe_projects_select():
+    try:
+        sel_event = st.session_state.dataframe_projects
+        selected = sel_event.selection
+
         df = st.session_state.df_projects
-        D = df.to_dict(orient='records')
-        for idx in true_indexes:
-            D[idx]['Select'] = True
-        for idx in false_indexes:
-            D[idx]['Select'] = False
+        D = df.to_dict(orient='records')  # <--- a list of dicts.
 
-
-        # save to session state
-        st.session_state.df_projects = pd.DataFrame(D)
-
-        print('DF')
-        print(st.session_state.df_projects)
-
-
-
-        # check for mulitple selections.
-        # sel_codes = edited_df.loc[edited_df['Select']]["billcode"]
-        # sel_names = edited_df.loc[edited_df['Select']]["projectname"]
-
-        if len(true_indexes) == 0:
-            st.session_state.active_project_code = '0'
-            st.session_state.active_project_name = ''
-        elif len(true_indexes) > 1:
-            st.warning('Select only one project.', icon=":material/warning:")
-            st.session_state.active_project_code = '0'
-            st.session_state.active_project_name = 'none'
-        else:
-            # save project and name to session state
-            df = st.session_state.df_projects
-            D = df.to_dict(orient='records')
-
-            idx = true_indexes[0]
-
+        if len(selected['rows']) == 1:
+            idx = selected['rows'][0]
             st.session_state.active_project_name = D[idx]['projectname']
             st.session_state.active_project_code = D[idx]['billcode']
 
+        if len(selected['rows']) == 0:
+            st.session_state.active_project_name = ''
+            st.session_state.active_project_code = ''
 
     except:
         ExceptHandler()
 
-def btnClearSelected_Click():
-    try:
-
-        df = st.session_state.df_projects #returns a Pandas Dataframe!!!!
-
-        D = df.to_dict(orient='records')  # this is a list of dicts.
-        for rec in D:
-            print('start: ' + str(rec))
-
-        if type(D) is dict:
-            print('DICTIONARY')
-        else:
-            print(type(D))
-        print(D)
-
-        for rec in D:
-            print('record: ' + str(rec))
-
-        for idx in range(0,len(D)):
-            D[idx]['Select'] = False
-
-        # back to a pandas dataframe
-        df = pd.DataFrame(D)
-        st.session_state.df_projects = df
-
-
-        # TODO
-        # Need to refresh the data editor widget.
-        #st.session_state.data_edit_projects.refresh()
-
-    except:
-        ExceptHandler()
 def DeleteSelectedProject():
     try:
         billcode = st.session_state.active_project_code
@@ -454,7 +385,8 @@ def btnAddProject_click():
     except:
         ExceptHandler()
 
-@st.experimental_dialog('Enter New Project Information',width='large')
+@st.experimental_dialog('Enter New Project Information',
+                        width='large')
 def NewProject_modal():
     try:
 
@@ -491,6 +423,26 @@ def btnstartstop_click():
 
     except:
         ExceptHandler()
+def btnBulkUpload_Click():
+    try:
+        thefile = st.session_state.btnBulkUpload
+        if thefile is not None:
+
+            # just go straight to a pandas dataframe.
+            dfx = pd.read_csv(thefile)
+            # and back out to a dictionary.
+            D = dfx.to_dict(orient='records')
+
+            for rec in D:
+                newcode = rec['billcode']
+                newname = rec['projectname']
+                print('Adding code: ' + newcode + ' for project: ' + newname)
+
+                # Add to the database.
+                Database_Project_Add(newcode, newname)
+
+    except:
+        ExceptHandler()
 
 # ===============================  UI  ===========================================
 try:
@@ -513,7 +465,10 @@ try:
 
     # ------- PROJECTS -----
 
-    column1, column2 = st.columns([10, 1])
+    # with st.expander('Select and Manage Projects',
+    #                  expanded=False):
+
+    column1, column2, column3 = st.columns([4, 5,2])
 
     with column1:
 
@@ -523,24 +478,38 @@ try:
 
         # Add a true/false field to the first column.
         df_selections = df.copy()
-        df_selections.insert(0, "Select", False)
+        # df_selections.insert(0, "Select", False)
         st.session_state.df_projects = df_selections
 
         # configure the "Apply to this" column to have checkboxes
-        column_config = {'Apply to this': st.column_config.CheckboxColumn(required=True)}
+        # column_config = {'Apply to this': st.column_config.CheckboxColumn(width='small',required=True,default=False),
+        #                  'billcode':st.column_config.TextColumn('Billing Code'),
+        #                  'projectname':st.column_config.TextColumn('Project Name')}
 
-        #DATA EDITOR
-        edited_df = st.data_editor(st.session_state.df_projects,
-                                   key='data_edit_projects',
-                                   hide_index=True,
-                                   column_config=column_config,
-                                   use_container_width=True,
-                                   on_change=data_editor_changed,
-                                   disabled=bool(st.session_state.status == 'work')
-                                   )
+        column_config = {'billcode':st.column_config.TextColumn('Billing Code'),
+                         'projectname':st.column_config.TextColumn('Project Name')}
+
+        # DATA FRAME
+        st.dataframe(st.session_state.df_projects,
+                     key='dataframe_projects',
+                     hide_index=True,
+                     column_config=column_config,
+                     column_order=('projectname', 'billcode'),
+                     on_select=dataframe_projects_select,
+                     selection_mode='single-row')
 
 
     with column2:
+
+        st.subheader(st.session_state.active_project_name,
+                     help='The chosen project.')
+
+        # TEXTAREA
+        st.text_area('Comments about tasks:',
+                     key='txt_comment',
+                     on_change=comment_changed,
+                     max_chars=200,
+                     help='Type comments for this work.')
 
         subcont = st.container()
 
@@ -549,107 +518,70 @@ try:
             btndisabled_Delete = (st.session_state.status == 'work') or (st.session_state.active_project_code == '0')
             st.button('Delete',
                       key='btnDeleteSelected',
-                      help='Delete the project you selected.',
+                      help='Delete the selected projects.',
                       on_click=DeleteSelectedProject,
                       disabled=btndisabled_Delete)
                       #icon=":material/delete:")
-
-            btndisabled_Clear = len(st.session_state.data_edit_projects) == 0
-            st.button('Clear',
-                      key='btnClearSelected',
-                      help='Clear selected projects.',
-                      on_click=btnClearSelected_Click,
-                      disabled=btndisabled_Clear
-                      )
+            with st.expander('Bulk upload projects from csv file.',expanded=False):
+                st.file_uploader('Bulk Upload Projects',
+                                 key='btnBulkUpload',
+                                 help='Upload projects from a .csv file.',
+                                 type='.csv',
+                                 on_change=btnBulkUpload_Click)
 
 
-            # st.button(':red-background[Add Another Project - Experimental WIP]',
-            #           key='btnAddProject',
-            #           help='Add a new project and billcode.',
-            #           disabled=bool(st.session_state.status == 'work'),
-            #           on_click=btnAddProject_click)
+        with st.expander('Add a new billing code and project',expanded=False):
 
-            # if st.session_state.btnAddProject:
-            #     NewProject_modal()
-            #     # open the modal dialog to add the project
+            # FORM
+            with st.form('New Project Information',clear_on_submit=True):
+                #st.subheader("Add a New Project")
+                newcode = st.text_input('Billing Code',key='ti_newcode')
+                newname = st.text_input('Name (what you want to call it)',key='ti_newname')
 
+                submitted = st.form_submit_button('Submit',
+                                                  disabled=bool(st.session_state.status == 'work'))
+
+                if submitted:
+                    if newcode == '' or newname == '':
+                        st.warning('Billing Code and Name are required.')
+                    else:
+                        Database_Project_Add(newcode, newname)
+                        # Trigger an update of the data editor.
+
+    with column3:
+        with st.container():
+
+           # decide which buttons are enabled.
+
+           if bool(st.session_state.active_project_code == '0'):
+               disablestart = True
+               disablestop = True
+           else:
+               if st.session_state.status == 'work':
+                   disablestart = True
+                   disablestop = False
+               else:
+                   disablestart = False
+                   disablestop = True
+
+           st.button('START',
+                     type='primary',
+                     key='btnstart',
+                     disabled=disablestart,
+                     help='Click to start working.',
+                     use_container_width=True,
+                     on_click=btnstartstop_click)
+
+           st.button('STOP',
+                     type='primary',
+                     key='btnstop',
+                     disabled=disablestop,
+                     help='Click to stop working.',
+                     use_container_width=True,
+                     on_click=btnstartstop_click)
 
 
     # ------------------------ add a new proejct ------------------------------------------------------
-    with st.expander('Add a New Billing Code and Project',expanded=False):
-
-        # FORM
-        with st.form('New Project Information',clear_on_submit=True):
-            st.subheader("Add a New Project")
-            newcode = st.text_input('Billing Code',key='ti_newcode')
-            newname = st.text_input('Name (what you want to call it)',key='ti_newname')
-
-            submitted = st.form_submit_button('Submit',
-                                              disabled=bool(st.session_state.status == 'work'))
-
-            if submitted:
-                if newcode == '' or newname == '':
-                    st.warning('Billing Code and Name are required.')
-                else:
-                    Database_Project_Add(newcode, newname)
-                    # Trigger an update of the data editor.
-
-
-    # TEXTAREA
-    st.text_area('Comments about tasks:',
-                 key='txt_comment',
-                 on_change=comment_changed,
-                 max_chars=200,
-                 help='Type comments for this work.')
-
-    # ---------------------- start stop working --------------------------------------------------------------
-
-    col1, col2 = st.columns([4, 1])
-
-    with col1:
-        # HEADER
-        st.subheader(st.session_state.active_project_name,
-                     help='The chosen project.')
-        # st.subheader('Controls')  # st.session_state.status)
-
-    #type(st.session_state['active_project_code'])
-
-    with col2:
-        # TOGGLE
-        with st.container():
-
-            # decide which buttons are enabled.
-
-            if bool(st.session_state.active_project_code == '0'):
-                disablestart = True
-                disablestop = True
-            else:
-                if st.session_state.status == 'work':
-                    disablestart = True
-                    disablestop = False
-                else:
-                    disablestart = False
-                    disablestop = True
-
-
-
-            st.button('START',
-                      type='primary',
-                                key='btnstart',
-                                  disabled=disablestart,
-                                  help='Click to start working.',
-                                  use_container_width=True,
-                                  on_click=btnstartstop_click)
-
-            st.button('STOP',
-                      type='primary',
-                      key='btnstop',
-                                  disabled=disablestop,
-                                  help='Click to stop working.',
-                                  use_container_width=True,
-                                  on_click=btnstartstop_click)
-
-
 
 except:
     ExceptHandler()
