@@ -6,13 +6,7 @@ import datetime
 import firebase_admin
 from firebase_admin import firestore
 from firebase_admin import credentials
-
-#from google_cloud_firestore.base_query import FieldFilter
-#from google_cloud_firestore import FieldFilter
-
 import streamlit as st
-# from streamlit import st.experimental_dialog
-from io import StringIO
 
 CertFolder = r'C:\firebase'
 FIREBASE_CERTIFICATE_FILE = os.path.join(CertFolder,'tkeeper_firebase_cert.json')
@@ -42,16 +36,14 @@ def ExceptHandler():
 st.set_page_config(page_title='Time Keeper Controls',
                    layout="wide",
                    page_icon=':stopwatch:',
-                   menu_items={'About':'Created by Greg Nichols, June 2024',
+                   menu_items={'About':'Created by OneOfUs0, June 2024',
                                'Get Help':'https://somafm.com/dronezone/'})
-
 
 try:
 
     # FLOW CONTROL  -----------
     if 'status' not in st.session_state:
         st.session_state.status = 'You are not working'
-        print('----> init status')
 
     if 'btn_stop_clicked' not in st.session_state:
         st.session_state.btn_stop_clicked = False
@@ -62,9 +54,9 @@ try:
         st.session_state.df_projects = df
 
     if 'starttime' not in st.session_state:
-        st.session_state.starttime = ''
+        st.session_state.starttime = None #datetime.date
     if 'stoptime' not in st.session_state:
-        st.session_state.stoptime = ''
+        st.session_state.stoptime = None  #datetime.date
 
     if 'comment' not in st.session_state:
         st.session_state.comment = ''
@@ -87,7 +79,7 @@ try:
     if 'app_initialized' not in st.session_state:
         st.session_state.app_initialized = False
 
-
+    db = None
     if not os.path.exists(FIREBASE_CERTIFICATE_FILE):
         print('Firebase Certificate file not found.  You must first get access to Firebase.')
         st.session_state.app_initialized = False
@@ -218,7 +210,6 @@ def Database_Log_Add(log_record):
 def AddEntry():
     try:
         # LOG billcode, time, and comments.
-
         userid = ''
 
         billcode = st.session_state.active_project_code
@@ -235,7 +226,6 @@ def AddEntry():
         elapsedtime_hrs = elap_minutes / 60
         elapsedtime = '{:.4f}'.format(elapsedtime_hrs)
 
-        #date_ymd = st.session_state.stopdate.year + '-' + st.session_state.stopdate.month + '-' + st.session_state.stopdate.day
         date_ord = st.session_state.stopdate.toordinal()
 
         userid = '36353'
@@ -283,7 +273,6 @@ def stopworking():
     except:
         ExceptHandler()
 
-
 # ================================== CALLBACKS =========================================
 
 def btn_click_ClearWork():
@@ -296,43 +285,29 @@ def btn_click_ClearWork():
     except:
         ExceptHandler()
 
-
 def comment_changed():
     try:
-
         thecomment = st.session_state.txt_comment
         st.session_state.comment = thecomment
-        print('updated to ' + thecomment)
+        #print('updated to ' + thecomment)
 
     except:
         ExceptHandler()
-def GetTrueFalseIndexes(adict):
-    try:
-        #print(adict)
-
-       # find which records are true
-        true_indexes,false_indexes = [],[]
-
-        for idx in adict:
-            if adict[idx]['Select'] == True:
-                true_indexes.append(idx)
-            else:
-                false_indexes.append(idx)
-
-
-        # for idx in adict['edited_rows']:
-        #     row = adict['edited_rows'][idx]
-        #     if row['Select'] == True:
-        #         true_indexes.append(idx)
-        #         print('True is ' + str(idx))
-        #     else:
-        #         false_indexes.append(idx)
-
-        return {'true':true_indexes, 'false':false_indexes}
-    except:
-        ExceptHandler()
-
-
+# def GetTrueFalseIndexes(adict):
+#     try:
+#
+#        # find which records are true
+#         true_indexes,false_indexes = [],[]
+#
+#         for idx in adict:
+#             if adict[idx]['Select'] == True:
+#                 true_indexes.append(idx)
+#             else:
+#                 false_indexes.append(idx)
+#
+#         return {'true':true_indexes, 'false':false_indexes}
+#     except:
+#         ExceptHandler()
 
 def dataframe_projects_select():
     try:
@@ -349,7 +324,7 @@ def dataframe_projects_select():
 
         if len(selected['rows']) == 0:
             st.session_state.active_project_name = ''
-            st.session_state.active_project_code = ''
+            st.session_state.active_project_code = '0'
 
     except:
         ExceptHandler()
@@ -390,15 +365,10 @@ def btnAddProject_click():
 def NewProject_modal():
     try:
 
-        # FORM
-        #with st.form('New Project Information', clear_on_submit=True):
         with st.container():
             # st.subheader("Add a New Project")
             newcode = st.text_input('Billing Code', key='ti_newcode')
             newname = st.text_input('Name (what you want to call it)', key='ti_newname')
-
-            #submitted = st.form_submit_button('Submit',
-              #                                disabled=bool(st.session_state.status == 'work'))
 
             submitted = st.button('Submit')
             if submitted:
@@ -461,12 +431,7 @@ try:
                   on_click=btn_click_ClearWork,
                   help='Use with caution.  This will erase all your previous work history!')
 
-    #st.divider()
-
     # ------- PROJECTS -----
-
-    # with st.expander('Select and Manage Projects',
-    #                  expanded=False):
 
     column1, column2, column3 = st.columns([4, 5,2])
 
@@ -477,14 +442,8 @@ try:
         df = GetProjects_cloud()
 
         # Add a true/false field to the first column.
-        df_selections = df.copy()
-        # df_selections.insert(0, "Select", False)
-        st.session_state.df_projects = df_selections
-
-        # configure the "Apply to this" column to have checkboxes
-        # column_config = {'Apply to this': st.column_config.CheckboxColumn(width='small',required=True,default=False),
-        #                  'billcode':st.column_config.TextColumn('Billing Code'),
-        #                  'projectname':st.column_config.TextColumn('Project Name')}
+        df_df = df.copy()
+        st.session_state.df_projects = df_df
 
         column_config = {'billcode':st.column_config.TextColumn('Billing Code'),
                          'projectname':st.column_config.TextColumn('Project Name')}
@@ -502,7 +461,7 @@ try:
     with column2:
 
         st.subheader(st.session_state.active_project_name,
-                     help='The chosen project.')
+                     help='The project you are working on.')
 
         # TEXTAREA
         st.text_area('Comments about tasks:',
@@ -511,30 +470,20 @@ try:
                      max_chars=200,
                      help='Type comments for this work.')
 
-        subcont = st.container()
+        btndisabled_Delete = (st.session_state.status == 'work') or (st.session_state.active_project_code == '0'
+                                                                     )
+        st.button('Delete',
+                  key='btnDeleteSelected',
+                  help='Delete the selected project.',
+                  on_click=DeleteSelectedProject,
+                  disabled=btndisabled_Delete
+                  )
+                  #icon=":material/delete:")
 
-        with subcont:
-            # BUTTONS
-            btndisabled_Delete = (st.session_state.status == 'work') or (st.session_state.active_project_code == '0')
-            st.button('Delete',
-                      key='btnDeleteSelected',
-                      help='Delete the selected projects.',
-                      on_click=DeleteSelectedProject,
-                      disabled=btndisabled_Delete)
-                      #icon=":material/delete:")
-            with st.expander('Bulk upload projects from csv file.',expanded=False):
-                st.file_uploader('Bulk Upload Projects',
-                                 key='btnBulkUpload',
-                                 help='Upload projects from a .csv file.',
-                                 type='.csv',
-                                 on_change=btnBulkUpload_Click)
-
-
-        with st.expander('Add a new billing code and project',expanded=False):
+        with st.expander('Add a new project and billing',expanded=False):
 
             # FORM
             with st.form('New Project Information',clear_on_submit=True):
-                #st.subheader("Add a New Project")
                 newcode = st.text_input('Billing Code',key='ti_newcode')
                 newname = st.text_input('Name (what you want to call it)',key='ti_newname')
 
@@ -548,11 +497,17 @@ try:
                         Database_Project_Add(newcode, newname)
                         # Trigger an update of the data editor.
 
+        with st.expander('Bulk upload projects from csv file.',expanded=False):
+            st.file_uploader('Bulk Upload Projects',
+                             key='btnBulkUpload',
+                             help='Upload projects from a .csv file.',
+                             type='.csv',
+                             on_change=btnBulkUpload_Click)
+
     with column3:
         with st.container():
 
-           # decide which buttons are enabled.
-
+           # Control disabled/enabled
            if bool(st.session_state.active_project_code == '0'):
                disablestart = True
                disablestop = True
@@ -581,8 +536,6 @@ try:
                      on_click=btnstartstop_click)
 
 
-    # ------------------------ add a new proejct ------------------------------------------------------
-
 except:
     ExceptHandler()
 
@@ -591,7 +544,6 @@ try:
     # Press the green button in the gutter to run the script.
     if __name__ == '__main__':
         pass
-        #print('---- MAIN ----')
 except:
     ExceptHandler()
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
