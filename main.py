@@ -21,16 +21,7 @@ def ExceptHandler():
     pymsg = "PYTHON ERRORS:\nTraceback info:\n" + tbinfo + "\nError Info:\n" + str(sys.exc_info()[1])
     print(pymsg)
 
-# -------------------- development notes --------------------
-#  To run this from Pycharm, do this:
-#   1. open in PyCharm - (already here)
-#  2.  go to the Terminal tab.
-#  3. type "streamlit run main.py"
-#  4. on the app, set setting to "Run on Save"
-#
-# ---------------------------------------------------------
-
-# ================================== INIT  =========================================
+# ------------------------------- INIT ---------------------------------
 
 # Page
 st.set_page_config(page_title='Time Keeper Controls',
@@ -40,15 +31,14 @@ st.set_page_config(page_title='Time Keeper Controls',
                                'Get Help':'https://somafm.com/dronezone/'})
 
 try:
-
-    # FLOW CONTROL  -----------
+    # FLOW CONTROL
     if 'status' not in st.session_state:
         st.session_state.status = 'You are not working'
 
     if 'btn_stop_clicked' not in st.session_state:
         st.session_state.btn_stop_clicked = False
 
-    # VALUES   -----------
+    # VALUES
     if 'df_projects' not in st.session_state:
         df = pd.DataFrame()
         st.session_state.df_projects = df
@@ -75,7 +65,7 @@ try:
     if 'collection_present' not in st.session_state:
         st.session_state.collection_present = False
 
-    # DATABASE  -------------
+    # DATABASE
     if 'app_initialized' not in st.session_state:
         st.session_state.app_initialized = False
 
@@ -92,8 +82,8 @@ try:
             st.session_state.app_initialized = True
         db = firestore.client()
 
-    # check for database collections and documents.
-    # Create if missing.
+    # Check for the existence of the database collection and documents.
+    # If they are missing, create them.
     if st.session_state.app_initialized and not st.session_state.collection_present:
 
         print('CHECKING FOR EXISTING COLLECTIONS AND DOCUMENTS')
@@ -145,7 +135,8 @@ try:
 except:
     ExceptHandler()
 
-# NOTE: this is CACHED
+# ------------------------------- FUCNTIONS ---------------------------------
+# NOTE: CACHED
 @st.cache_data
 def GetProjects_cloud():
     try:
@@ -238,7 +229,7 @@ def AddEntry():
 
         #print(str(log_record))
 
-        if st.session_state.btn_stop_clicked == True:
+        if st.session_state.btn_stop_clicked:
             Database_Log_Add(log_record)
 
 
@@ -293,21 +284,6 @@ def comment_changed():
 
     except:
         ExceptHandler()
-# def GetTrueFalseIndexes(adict):
-#     try:
-#
-#        # find which records are true
-#         true_indexes,false_indexes = [],[]
-#
-#         for idx in adict:
-#             if adict[idx]['Select'] == True:
-#                 true_indexes.append(idx)
-#             else:
-#                 false_indexes.append(idx)
-#
-#         return {'true':true_indexes, 'false':false_indexes}
-#     except:
-#         ExceptHandler()
 
 def dataframe_projects_select():
     try:
@@ -360,24 +336,22 @@ def btnAddProject_click():
     except:
         ExceptHandler()
 
-@st.experimental_dialog('Enter New Project Information',
-                        width='large')
-def NewProject_modal():
-    try:
-
-        with st.container():
-            # st.subheader("Add a New Project")
-            newcode = st.text_input('Billing Code', key='ti_newcode')
-            newname = st.text_input('Name (what you want to call it)', key='ti_newname')
-
-            submitted = st.button('Submit')
-            if submitted:
-                Database_Project_Add(newcode, newname)
-                st.rerun()
-
-
-    except:
-        ExceptHandler()
+# @st.experimental_dialog('Enter New Project Information',
+#                         width='large')
+# def NewProject_modal():
+#     try:
+#         with st.container():
+#             # st.subheader("Add a New Project")
+#             newcode = st.text_input('Billing Code', key='ti_newcode')
+#             newname = st.text_input('Name (what you want to call it)', key='ti_newname')
+#
+#             submitted = st.button('Submit')
+#             if submitted:
+#                 Database_Project_Add(newcode, newname)
+#                 st.rerun()
+#
+#     except:
+#         ExceptHandler()
 def btnstartstop_click():
     try:
         if st.session_state.btnstop:
@@ -389,8 +363,6 @@ def btnstartstop_click():
             # start working
             startworking()
             st.session_state.status = 'work'
-
-
     except:
         ExceptHandler()
 def btnBulkUpload_Click():
@@ -410,13 +382,10 @@ def btnBulkUpload_Click():
 
                 # Add to the database.
                 Database_Project_Add(newcode, newname)
-
     except:
         ExceptHandler()
-
 # ===============================  UI  ===========================================
 try:
-
     tittlecol1, tittlecol2 = st.columns([5, 1])
 
     with tittlecol1:
@@ -456,7 +425,6 @@ try:
                      column_order=('projectname', 'billcode'),
                      on_select=dataframe_projects_select,
                      selection_mode='single-row')
-
 
     with column2:
 
@@ -534,11 +502,8 @@ try:
                      help='Click to stop working.',
                      use_container_width=True,
                      on_click=btnstartstop_click)
-
-
 except:
     ExceptHandler()
-
 # ===============================  MAIN  ===========================================
 try:
     # Press the green button in the gutter to run the script.
