@@ -2,7 +2,7 @@ name: keeper_webapp
 channels:
   - defaults
 dependencies:
-  - firebase_admin
+  - firebase-admin
   - google-cloud-firestore
   - abseil-cpp=20211102.0=hd77b12b_0
   - altair=5.0.1=py310haa95532_0
