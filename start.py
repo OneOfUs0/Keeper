@@ -1,5 +1,9 @@
 import streamlit as st
-import  traceback, sys
+import  traceback, sys, json
+from io import StringIO
+import firebase_admin
+from firebase_admin import firestore
+from firebase_admin import credentials
 
 
 def ExceptHandler():
@@ -18,9 +22,60 @@ try:
                        #     'About':'Created by Greg Nichols'}
                        )
 
+    if 'app_initialized' not in st.session_state:
+        st.session_state.app_initialized = False
+    if 'certfile' not in st.session_state:
+        st.session_state.certfile = ''
+
+    def btnUploadCert_Change():
+        try:
+            print('------- initialize with cert file ---------')
+            thefile = st.session_state.btnUploadCert
+
+            success = False
+            if thefile is not None:
+
+                # convert the UploadedFile to a dict.
+                stringio = StringIO(thefile.getvalue().decode("utf-8"))
+                cert_dict = json.load(stringio)
+
+                if st.session_state.app_initialized:
+                    print('Database connection is already initialized.')
+                    st.warning('Database connection is already initialized.')
+                else:
+                    try:
+                        #stringio = StringIO(thefile.getvalue().decode("utf-8"))
+                        cred = credentials.Certificate(cert_dict)
+                        app = firebase_admin.initialize_app(cred) # st.session_state.certfile)
+                        db = firestore.client()
+                        success = True
+                        st.session_state.app_initialized = True
+                        st.session_state.certfile = thefile
+                        st.session_state.db = db
+                    except:
+                        st.session_state.app_initialized = False
+                        st.warning('Database connection failed.')
+                        ExceptHandler()
+
+            st.switch_page('pages/main.py')
+        except:
+            ExceptHandler()
+
+    st.header('Start Here')
+    st.subheader('Upload Certificate file')
+    st.markdown('If you have already created a Data Access Certificate file, upload it below.  If you have not  '
+                'yet created the file, follow the steps below to create one.')
+    st.file_uploader('Upload it here.',
+                     key='btnUploadCert',
+                     help='Upload the certificate file you created with Firestore.',
+                     type='.json',
+                     on_change=btnUploadCert_Change)
+
+
+
     with st.container():
 
-        st.header('Setup Required ')
+        st.header('Setup Steps')
         #st.subheader('Setup Required ')
 
         st.markdown('This application uses a cloud database called ***Firestore***, which is part of ***Firebase***, '

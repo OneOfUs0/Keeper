@@ -3,13 +3,15 @@ import random
 import pandas as pd
 import string
 import datetime
+#from goodle_cloud_firestore import firestore
+#from goodle_cloud_firestore import credentials
 import firebase_admin
 from firebase_admin import firestore
 from firebase_admin import credentials
 import streamlit as st
 
-CertFolder = r'C:\firebase'
-FIREBASE_CERTIFICATE_FILE = os.path.join(CertFolder,'tkeeper_firebase_cert.json')
+#CertFolder = r'C:\firebase'
+#FIREBASE_CERTIFICATE_FILE = os.path.join(CertFolder,'foo') #'tkeeper_firebase_cert.json')
 
 def Refresh():
     GetProjects_cloud.clear()
@@ -62,25 +64,23 @@ try:
     if 'active_project_name' not in st.session_state:
         st.session_state.active_project_name = ''
 
+    # if 'certfile' not in st.session_state:
+    #     st.session_state.certfile = ''
+
     if 'collection_present' not in st.session_state:
         st.session_state.collection_present = False
 
     # DATABASE
-    if 'app_initialized' not in st.session_state:
-        st.session_state.app_initialized = False
-
-    db = None
-    if not os.path.exists(FIREBASE_CERTIFICATE_FILE):
-        print('Firebase Certificate file not found.  You must first get access to Firebase.')
-        st.session_state.app_initialized = False
-        # force the setup page to open and disable sidebar navigation.
-        st.switch_page('pages/setup.py')
+    if not st.session_state.app_initialized:
+        raise SystemExit(0)  # QUIT EXECUTION
     else:
-        cred = credentials.Certificate(FIREBASE_CERTIFICATE_FILE)
-        if not st.session_state.app_initialized:
-            app = firebase_admin.initialize_app(cred)
-            st.session_state.app_initialized = True
-        db = firestore.client()
+        db = st.session_state.db
+
+    #     cred = credentials.Certificate(st.session_state.certfile)
+    #     if not st.session_state.app_initialized:
+    #         app = firebase_admin.initialize_app(cred)
+    #         st.session_state.app_initialized = True
+    #     db = firestore.client()
 
     # Check for the existence of the database collection and documents.
     # If they are missing, create them.

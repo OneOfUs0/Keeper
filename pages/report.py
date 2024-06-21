@@ -60,14 +60,16 @@ if 'endweek' not in st.session_state:
 if 'app_initialized' not in st.session_state:
     st.session_state.app_initialized = False
 
-CertFolder = r'C:\firebase'
-FIREBASE_CERTIFICATE_FILE = os.path.join(CertFolder,'tkeeper_firebase_cert.json')
+if 'certfile' not in st.session_state:
+    st.session_state.certfile = ''
 
+# do not initialize the app.  This is done on the start page.
 if not st.session_state.app_initialized:
-    app = firebase_admin.initialize_app(FIREBASE_CERTIFICATE_FILE)
-    st.session_state.app_initialized = True
 
-db = firestore.client()
+    # stop execution
+    raise SystemExit(0)
+else:
+    db = st.session_state.db
 
 # ================================== FUNCTIONS =========================================
 
