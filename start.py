@@ -27,12 +27,13 @@ try:
     if 'certfile' not in st.session_state:
         st.session_state.certfile = ''
 
+
     def btnUploadCert_Change():
         try:
             print('------- initialize with cert file ---------')
             thefile = st.session_state.btnUploadCert
 
-            success = False
+
             if thefile is not None:
 
                 # convert the UploadedFile to a dict.
@@ -41,31 +42,32 @@ try:
 
                 if st.session_state.app_initialized:
                     print('Database connection is already initialized.')
-                    st.warning('Database connection is already initialized.')
+                    st.warning('Database connection is already initialized.  You cannot change this one or create a second one.')
                 else:
                     try:
-                        #stringio = StringIO(thefile.getvalue().decode("utf-8"))
                         cred = credentials.Certificate(cert_dict)
                         app = firebase_admin.initialize_app(cred) # st.session_state.certfile)
                         db = firestore.client()
-                        success = True
+
                         st.session_state.app_initialized = True
                         st.session_state.certfile = thefile
                         st.session_state.db = db
+                        st.success('Succeeded connecting to the database.  You may continue.')
                     except:
                         st.session_state.app_initialized = False
                         st.warning('Database connection failed.')
                         ExceptHandler()
 
-            st.switch_page('pages/main.py')
+
+            #st.switch_page('pages/main.py')
         except:
             ExceptHandler()
 
     st.header('Start Here')
     st.subheader('Upload Certificate file')
-    st.markdown('If you have already created a Data Access Certificate file, upload it below.  If you have not  '
-                'yet created the file, follow the steps below to create one.')
-    st.file_uploader('Upload it here.',
+    st.markdown('If you have already created a data access certificate file, upload it below.  If you have not  '
+                'yet created the file, follow the ***Setup Steps*** to create one.')
+    st.file_uploader('Upload the certificate json file here.',
                      key='btnUploadCert',
                      help='Upload the certificate file you created with Firestore.',
                      type='.json',

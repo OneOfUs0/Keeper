@@ -384,6 +384,15 @@ def btnBulkUpload_Click():
                 Database_Project_Add(newcode, newname)
     except:
         ExceptHandler()
+def btnNavReport_Click():
+    try:
+        st.switch_page("pages/report.py")
+
+    except:
+        ExceptHandler()
+
+
+
 # ===============================  UI  ===========================================
 try:
     tittlecol1, tittlecol2 = st.columns([5, 1])
@@ -471,6 +480,9 @@ try:
                              help='Upload projects from a .csv file.',
                              type='.csv',
                              on_change=btnBulkUpload_Click)
+        st.button('Go to report page.',
+                  key='btnNavReport',
+                  on_click=btnNavReport_Click)
 
     with column3:
         with st.container():
