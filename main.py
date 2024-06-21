@@ -59,7 +59,7 @@ try:
                         ExceptHandler()
 
 
-            #st.switch_page('pages/main.py')
+            #st.switch_page('pages/times.py')
         except:
             ExceptHandler()
 
