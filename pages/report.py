@@ -4,9 +4,9 @@ import string, os, random
 import datetime
 import  traceback, sys
 
-import firebase_admin
-from firebase_admin import firestore
-from firebase_admin import credentials
+# import firebase_admin
+# from firebase_admin import firestore
+# from firebase_admin import credentials
 
 from configparser import *
 

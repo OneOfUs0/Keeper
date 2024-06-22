@@ -5,9 +5,9 @@ import string
 import datetime
 #from goodle_cloud_firestore import firestore
 #from goodle_cloud_firestore import credentials
-import firebase_admin
-from firebase_admin import firestore
-from firebase_admin import credentials
+# import firebase_admin
+# from firebase_admin import firestore
+# from firebase_admin import credentials
 import streamlit as st
 
 #CertFolder = r'C:\firebase'
@@ -326,32 +326,9 @@ def DeleteSelectedProject():
         GetProjects_cloud.clear()
         st.rerun()
 
-
-    except:
-        ExceptHandler()
-def btnAddProject_click():
-    try:
-        NewProject_modal()
-        # open the modal dialog to add the project
     except:
         ExceptHandler()
 
-# @st.experimental_dialog('Enter New Project Information',
-#                         width='large')
-# def NewProject_modal():
-#     try:
-#         with st.container():
-#             # st.subheader("Add a New Project")
-#             newcode = st.text_input('Billing Code', key='ti_newcode')
-#             newname = st.text_input('Name (what you want to call it)', key='ti_newname')
-#
-#             submitted = st.button('Submit')
-#             if submitted:
-#                 Database_Project_Add(newcode, newname)
-#                 st.rerun()
-#
-#     except:
-#         ExceptHandler()
 def btnstartstop_click():
     try:
         if st.session_state.btnstop:
