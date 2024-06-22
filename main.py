@@ -153,8 +153,8 @@ try:
             <li>Click on the <b><i>Service accounts</b></i> tab.</li>
             <li>Choose the Python and click on <b><i>Generate new private key</b></i> button.</li>
             <li>On the Popup, click on <b><i>Generate key</b></i>.</li>
-            <li>Your browser will download a file - open the browser's downloads folder and copy this .json file to <i>C:/firebase</i>.</li>
-            <li>Rename the file <i>tkeeper_firebase_cert.json.</i></li>
+            <li>Your browser will download a file - open the browser's downloads folder and copy this .json file to a place that you will remember.</li>
+            <li>You may want to give this file a simple name like <i>tkeeper_firebase_cert.json.</i></li>
             </ol>
             <a href="https://clemfournier.medium.com/how-to-get-my-firebase-service-account-key-file-f0ec97a21620">Addtional Help Creating the Certificate</a>
             '''
