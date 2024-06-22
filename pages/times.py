@@ -420,7 +420,7 @@ try:
                      key='txt_comment',
                      on_change=comment_changed,
                      max_chars=200,
-                     help='Type comments for this work.')
+                     help='Type a description of the work you are doing.  You can also edit this while working.')
 
         btndisabled_Delete = (st.session_state.status == 'work') or (st.session_state.active_project_code == '0'
                                                                      )
@@ -433,6 +433,11 @@ try:
                   #icon=":material/delete:")
 
         with st.expander('Add a new project and billing',expanded=False):
+            instruct = '''
+            **Instructions**  
+            Enter and ***Submit*** the billing code and the project name below.  They will be added to your database.  
+            '''
+            st.markdown(instruct)
 
             # FORM
             with st.form('New Project Information',clear_on_submit=True):
@@ -444,21 +449,26 @@ try:
 
                 if submitted:
                     if newcode == '' or newname == '':
-                        st.warning('Billing Code and Name are required.')
+                        st.warning('Billing Code and Project Name are required.')
                     else:
                         Database_Project_Add(newcode, newname)
                         # Trigger an update of the data editor.
 
         with st.expander('Bulk upload projects from csv file.',expanded=False):
+            instruct = '''
+            **Instructions**  
+            Your .csv file must have at least the two fields called ***billcode*** and ***projectname***.  
+            '''
+            st.markdown(instruct)
             st.file_uploader('Bulk Upload Projects',
                              key='btnBulkUpload',
                              help='Upload projects from a .csv file.',
                              type='.csv',
                              on_change=btnBulkUpload_Click)
 
-        st.button('Go to report page.',
-                  key='btnNavReport',
-                  on_click=btnNavReport_Click)
+        # st.button('Go to report page.',
+        #           key='btnNavReport',
+        #           on_click=btnNavReport_Click)
 
     with column3:
         with st.container():

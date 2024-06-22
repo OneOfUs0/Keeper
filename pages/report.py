@@ -199,15 +199,18 @@ col1, col2, col3 = st.columns([1,1,1])
 with col1:
     st.button('Generate Report',
               key='btn_report',
+              help='Click to get a summary of the work over the selected dates.',
               on_click=GenerateTimeReport)
 with col2:
     st.date_input('Start Date',
                   value=st.session_state.startweek,
-                  key='startdate')
+                  key='startdate',
+                  help='Beginning date to report.')
 with col3:
     st.date_input('End Date',
                   value=st.session_state.endweek,
-                  key='enddate')
+                  key='enddate',
+                  help='Ending date to report.')
 
 
 # create the Data Frame
