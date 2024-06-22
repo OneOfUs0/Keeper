@@ -194,23 +194,37 @@ def ConfigToCSV():
 
 st.header('Report')
 
-col1, col2, col3 = st.columns([1,1,1])
+col1, col2, col3, col4 = st.columns([2,2,2,2])
 
 with col1:
-    st.button('Generate Report',
-              key='btn_report',
-              help='Click to get a summary of the work over the selected dates.',
-              on_click=GenerateTimeReport)
-with col2:
+    subcol1, subcol2 = st.columns([4,4])
+    with subcol1:
+        st.button('Generate Report',
+                  key='btn_report',
+                  help='Click to get a summary of the work over the selected dates.',
+                  on_click=GenerateTimeReport)
+    with subcol2:
+        st.page_link('pages/times.py',
+                     label='Go Back to Keeping Track of my Time')
+
+
+
+with col3:
     st.date_input('Start Date',
                   value=st.session_state.startweek,
                   key='startdate',
                   help='Beginning date to report.')
-with col3:
+with col4:
     st.date_input('End Date',
                   value=st.session_state.endweek,
                   key='enddate',
                   help='Ending date to report.')
+
+explain = ''' ****Instructions****  
+Select time range and click ***Generate Report***.   This defaults to the current week.   If you select a span of more than one week, the times and projects will aggregate to each day of the week.  
+Fill out your timesheet by copying and pasting the billing code, comments, and time into your timesheet.   Time units are hours.
+'''
+st.markdown(explain)
 
 
 # create the Data Frame

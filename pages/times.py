@@ -377,12 +377,12 @@ try:
         st.header('Project Time Keeper')
 
 
-    with tittlecol2:
-        # BUTTON
-        st.button('New Week (clear history)',
-                  key='clearall',
-                  on_click=btn_click_ClearWork,
-                  help='Use with caution.  This will erase all your previous work history!')
+    # with tittlecol2:
+    #     # BUTTON
+    #     st.button('New Week (clear history)',
+    #               key='clearall',
+    #               on_click=btn_click_ClearWork,
+    #               help='Use with caution.  This will erase all your previous work history!')
 
     # ------- PROJECTS -----
 
@@ -500,6 +500,19 @@ try:
                      help='Click to stop working.',
                      use_container_width=True,
                      on_click=btnstartstop_click)
+
+           with st.expander('Other Actions'):
+
+               explain = '''*** ***'''
+               st.markdown(explain)
+
+               st.page_link('pages/report.py',
+                            label='Go to Summary Report')
+
+               st.button('Delete all work history',
+                         key='clearall',
+                         on_click=btn_click_ClearWork,
+                         help='Use with caution.  This will erase all your previous work history!')
 except:
     ExceptHandler()
 # ===============================  MAIN  ===========================================

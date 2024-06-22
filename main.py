@@ -37,12 +37,6 @@ try:
     #     </style>
     #     """, unsafe_allow_html=True)
 
-    def btn_GoToPageMain_Click():
-        try:
-            st.switch_page('pages/times.py')
-        except:
-            ExceptHandler()
-
 
     def btnUploadCert_Change():
         try:
@@ -74,15 +68,15 @@ try:
                         st.warning('Database connection failed.')
                         ExceptHandler()
 
-
-            st.switch_page('pages/times.py')
         except:
             ExceptHandler()
 
 
     if st.session_state.app_initialized:
         st.header('Database connection established')
-        st.subheader('<-- Use the sidebar Navigation to proceed to the Times page.')
+
+        st.page_link('pages/times.py',
+                     label='Click Here to Start Keeping Track of Time')
 
 
     if not st.session_state.app_initialized:
@@ -103,19 +97,19 @@ try:
             st.header('Setup Steps')
             #st.subheader('Setup Required ')
 
-            st.markdown('This application uses a cloud database called ***Firestore***, which is part of ***Firebase***, '
+            st.markdown('This application uses a cloud database called ***Firestore***, part of Google\'s ***Firebase***, '
                         'to store your project\'s information and your work history.   You will need to use your Google '
-                        'account to create this initial database and grant access to this application.  '  
-                        'Follow the steps below.')
+                        'account to create this database "container" and grant access to this application.  '  
+                        'Follow the three steps below.')
 
             PPH1 = '''**Sign into Google and Firebase**  
-            First open your web browser and, if you are not yet signed in, sign into your google account. 
-            Next search for ***Firebase Console*** and click on the Firebase Console link  or click here: http://console.firebase.google.com. 
+            First open your web browser and, if you are not yet signed in, sign into your Google account.  
+            
             '''
 
             PPH2 = '''
             **Create a Project in Firebase**  
-            Go to the Firebase Console page (http://console.firebase.google.com).
+            Go to the Firebase Console page http://console.firebase.google.com.
             '''
 
             PPH2_html_outline = '''
@@ -129,7 +123,7 @@ try:
 
             PPH3 = '''
             **Create a Database in Firestore**  
-            Go to the Goolge Firebase console (http://console.firebase.google.com) and open the ***TKeeper*** project page.  
+            Go to the Goolge Firebase console: http://console.firebase.google.com and open the ***TKeeper*** project page.  
             '''
 
 
@@ -143,8 +137,8 @@ try:
             '''
 
             PPH4 = '''
-            ***Create a Database Access Certificate***  
-            Go to the Goolge Firebase console (http://console.firebase.google.com) and open the ***TKeeper*** project page.
+            **Create a Database Access Certificate**  
+            Go to the Goolge Firebase console http://console.firebase.google.com and open the ***TKeeper*** project page.
             '''
 
             PPH4_html_outline  = '''
@@ -168,26 +162,26 @@ try:
 
                 with col2:
 
-                    with st.expander('Video for creating an account:',expanded=False):
+                    with st.expander('Video for using Firebase and Firestore',expanded=False):
 
-                        # video for creating and account.
+                        # video
                         url = r'https://www.youtube.com/watch?v=3B1b-RU1BeU'
                         st.video(url)
 
 
         # CREATE THE PROJECT
-        st.subheader('Create Project')
+        st.subheader('1. Create Project')
         st.markdown(PPH2)
 
         st.html(PPH2_html_outline)
 
 
         # CREATE THE CERTIFICATE TO CONNECT TO YOUR PROJECTS DATABASE.
-        st.subheader('Create Database')
+        st.subheader('2. Create Database')
         st.markdown(PPH3)
         st.html(PPH3_html_outline)
 
-        st.subheader('Create Certificate')
+        st.subheader('3. Create Certificate')
         st.markdown(PPH4)
         st.html(PPH4_html_outline)
 
