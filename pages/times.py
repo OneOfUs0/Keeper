@@ -513,6 +513,25 @@ try:
                          key='clearall',
                          on_click=btn_click_ClearWork,
                          help='Use with caution.  This will erase all your previous work history!')
+
+    with st.expander('Instructions and help'):
+        instructions =  '''
+        ****KEEPING TRACK OF TIME****  
+        Select the project by clicking to the LEFT of the project name.   The active project name will display at the top of the center column.
+        Next, you can add comments about what you will be doing or you can add later as you are working.   Start the timer by clicking ***START***.  When
+        you are finished working, add your final comments and click the ***STOP*** button.
+        
+        ****ADDING PROJECTS AND BILLING CODES****  
+        If you are using this for the first time, no on the left side under ***Project Time Keeper*** and you will need to add your projects.  There are two options
+         for adding projects.  1. Add them one at a time, using the form under ***Add a new project and billing***.  2. Add many projects at once from a .csv file 
+         that you provide using the ***Bulk upload projects from csv file.***.
+        
+        ****REMOVING PROJECTS AND BILLING CODES****  
+        To remove a project from the list, select the project and click the ***Delete*** button.
+        
+        
+        '''
+        st.markdown(instructions)
 except:
     ExceptHandler()
 # ===============================  MAIN  ===========================================
