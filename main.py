@@ -65,7 +65,13 @@ try:
                         st.success('Succeeded connecting to the database.  You may continue.')
                     except:
                         st.session_state.app_initialized = False
-                        st.warning('Database connection failed.')
+
+                        tb = sys.exc_info()[2]
+                        tbinfo = traceback.format_tb(tb)[0]
+                        pymsg = "PYTHON ERRORS:\nTraceback info:\n" + tbinfo + "\nError Info:\n" + str(sys.exc_info()[1])
+
+                        st.warning('Database connection failed.' + '\n' + pymsg)
+
                         ExceptHandler()
 
         except:
