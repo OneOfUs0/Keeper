@@ -60,12 +60,12 @@ try:
 
                         cred = credentials.Certificate(cert_dict)
                         app = firebase_admin.initialize_app(cred,name=appname)
-                        db = firestore.client()
+                        db = firestore.client(app)
 
                         st.session_state.app_initialized = True
                         st.session_state.certfile = thefile
                         st.session_state.db = db
-                        st.success('Succeeded connecting to the database.  You may continue.' + '\n' + '   (Your db app name is ' + appname + ')')
+                        st.success('Succeeded connecting to the database.  You may continue.' + '\n' + '   (Your Firebase App name is ' + appname + ')')
                     except:
                         st.session_state.app_initialized = False
 
