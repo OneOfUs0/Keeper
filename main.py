@@ -1,5 +1,5 @@
 import streamlit as st
-import  traceback, sys, json
+import  traceback, sys, json,uuid
 from io import StringIO
 
 import firebase_admin
@@ -55,14 +55,17 @@ try:
                     st.warning('Database connection is already initialized.  You cannot change this one or create a second one.')
                 else:
                     try:
+                        appname = str(uuid.uuid1())
+                        st.session_state.appname = appname
+
                         cred = credentials.Certificate(cert_dict)
-                        app = firebase_admin.initialize_app(cred)
+                        app = firebase_admin.initialize_app(cred,name=appname)
                         db = firestore.client()
 
                         st.session_state.app_initialized = True
                         st.session_state.certfile = thefile
                         st.session_state.db = db
-                        st.success('Succeeded connecting to the database.  You may continue.')
+                        st.success('Succeeded connecting to the database.  You may continue.' + '\n' + appname)
                     except:
                         st.session_state.app_initialized = False
 
