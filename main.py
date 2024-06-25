@@ -65,7 +65,7 @@ try:
                         st.session_state.app_initialized = True
                         st.session_state.certfile = thefile
                         st.session_state.db = db
-                        st.success('Succeeded connecting to the database.  You may continue.' + '\n' + appname)
+                        st.success('Succeeded connecting to the database.  You may continue.' + '\n' + '   (Your db app name is ' + appname + ')')
                     except:
                         st.session_state.app_initialized = False
 
