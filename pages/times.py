@@ -242,7 +242,6 @@ def startworking():
 
         # start time
         st.session_state.starttime = datetime.datetime.now()
-
         st.session_state.startdate = datetime.date.today()  #datetime.date
 
     except:
@@ -402,13 +401,22 @@ try:
                          'projectname':st.column_config.TextColumn('Project Name')}
 
         # DATA FRAME
-        st.dataframe(st.session_state.df_projects,
-                     key='dataframe_projects',
-                     hide_index=True,
-                     column_config=column_config,
-                     column_order=('projectname', 'billcode'),
-                     on_select=dataframe_projects_select,
-                     selection_mode='single-row')
+        if st.session_state.status == 'work':
+            st.dataframe(st.session_state.df_projects,
+                         key='dataframe_projects',
+                         hide_index=True,
+                         column_config=column_config,
+                         column_order=('projectname', 'billcode'),
+                         on_select='ignore',
+                         selection_mode='single-row')
+        else:
+            st.dataframe(st.session_state.df_projects,
+                         key='dataframe_projects',
+                         hide_index=True,
+                         column_config=column_config,
+                         column_order=('projectname', 'billcode'),
+                         on_select=dataframe_projects_select,
+                         selection_mode='single-row')
 
     with column2:
 
@@ -507,12 +515,14 @@ try:
                st.markdown(explain)
 
                st.page_link('pages/report.py',
-                            label='Go to Summary Report')
+                            label='Go to Summary Report',
+                            disabled=bool(st.session_state.status == 'work'))
 
                st.button('Delete all work history',
                          key='clearall',
                          on_click=btn_click_ClearWork,
-                         help='Use with caution.  This will erase all your previous work history!')
+                         help='Use with caution.  This will erase all your previous work history!',
+                         disabled=bool(st.session_state.status == 'work'))
 
     with st.expander('Instructions and help'):
         instructions =  '''

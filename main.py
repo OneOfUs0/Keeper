@@ -37,12 +37,10 @@ try:
     #     </style>
     #     """, unsafe_allow_html=True)
 
-
     def btnUploadCert_Change():
         try:
             print('------- initialize with cert file ---------')
             thefile = st.session_state.btnUploadCert
-
 
             if thefile is not None:
 
@@ -76,7 +74,6 @@ try:
                         st.warning('Database connection failed.' + '\n' + pymsg)
 
                         ExceptHandler()
-
         except:
             ExceptHandler()
 
