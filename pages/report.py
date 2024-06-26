@@ -227,8 +227,14 @@ Fill out your timesheet by copying and pasting the billing code, comments, and t
 st.markdown(explain)
 
 
-# create the Data Frame
+# Data Frame
+report_config = {'Day': st.column_config.TextColumn(label='Day of the Week', width='small'),
+                 'Billingcode': st.column_config.TextColumn(label='Billing Code', width='small'),
+                 'Time':st.column_config.TextColumn(label='Elapsed Time (hours)',width='small'),
+                 'Comments':st.column_config.TextColumn(label='Comments',width='large')}
+
 st.dataframe(st.session_state.reportdf,
+             column_config=report_config,
              use_container_width=True)
 
 # st.button('convert config to csv.',

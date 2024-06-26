@@ -397,8 +397,8 @@ try:
         df_df = df.copy()
         st.session_state.df_projects = df_df
 
-        column_config = {'billcode':st.column_config.TextColumn('Billing Code'),
-                         'projectname':st.column_config.TextColumn('Project Name')}
+        column_config = {'billcode':st.column_config.TextColumn(label='Billing Code',width='medium'),
+                         'projectname':st.column_config.TextColumn(label='Project Name',width='medium')}
 
         # DATA FRAME
         if st.session_state.status == 'work':
