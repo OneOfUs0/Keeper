@@ -114,7 +114,13 @@ def GetWorkRecords():
                 for billcode in Totals[day]:
                     time = Totals[day][billcode]['Time']
                     comments = Totals[day][billcode]['comment']
-                    rec = {'Day':day,'Billingcode':billcode,'Time':time,'Comments':comments}
+
+                    if billcode in st.session_state.CodeProjectname:
+                        projectname = st.session_state.CodeProjectname[billcode]
+                    else:
+                        projectname = 'unknown'
+
+                    rec = {'Day':day,'Projectname':projectname,'Billingcode':billcode,'Time':time,'Comments':comments}
                     records.append(rec)
 
         return records
@@ -201,13 +207,12 @@ with col1:
     with subcol1:
         st.button('Generate Report',
                   key='btn_report',
+                  type='primary',
                   help='Click to get a summary of the work over the selected dates.',
                   on_click=GenerateTimeReport)
     with subcol2:
         st.page_link('pages/times.py',
                      label='Go Back to Keeping Track of my Time')
-
-
 
 with col3:
     st.date_input('Start Date',
@@ -228,14 +233,28 @@ st.markdown(explain)
 
 
 # Data Frame
-report_config = {'Day': st.column_config.TextColumn(label='Day of the Week', width='small'),
+report_df = st.session_state.reportdf.copy()
+# insert false.
+report_df.insert(loc=0,column='Select',value=False)
+
+
+report_config = {'Select':st.column_config.CheckboxColumn(label='Entered',width='small',help='Use this to track those you have entered into your timesheet.',default=False),
+                 'Day': st.column_config.TextColumn(label='Day of the Week', width='small'),
+                 'Projectname':st.column_config.TextColumn(label='Project',width='small'),
                  'Billingcode': st.column_config.TextColumn(label='Billing Code', width='small'),
                  'Time':st.column_config.TextColumn(label='Elapsed Time (hours)',width='small'),
                  'Comments':st.column_config.TextColumn(label='Comments',width='large')}
 
-st.dataframe(st.session_state.reportdf,
-             column_config=report_config,
-             use_container_width=True)
+
+# st.dataframe(report_df,
+#              column_config=report_config,
+#              use_container_width=True)
+
+st.data_editor(report_df,
+               disabled=['Day','Time','Comments','Billingcode','Project'],
+               hide_index=True,
+               column_config=report_config,
+               use_container_width=True)
 
 # st.button('convert config to csv.',
 #           on_click=ConfigToCSV)

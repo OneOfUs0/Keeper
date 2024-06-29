@@ -52,6 +52,7 @@ try:
 
     if 'comment' not in st.session_state:
         st.session_state.comment = ''
+
     if 'txt_comment' not in st.session_state:
         st.session_state.txt_comment = ''
 
@@ -63,6 +64,9 @@ try:
 
     if 'active_project_name' not in st.session_state:
         st.session_state.active_project_name = ''
+
+    if 'CodeProjectname' not in st.session_state:
+        st.session_state.CodeProjectname = {}
 
     # if 'certfile' not in st.session_state:
     #     st.session_state.certfile = ''
@@ -141,14 +145,21 @@ except:
 def GetProjects_cloud():
     try:
         records = []
+        Namedict = {}
 
         docs = db.collection('projects').get()
         for doc in docs:
             record = doc.to_dict()
             records.append(record)
 
+            Namedict[record['billcode']] = record['projectname']
+
         df = pd.DataFrame(records)
         st.session_state.df_projects = df
+
+        # save this dictionary to lookup the name for the code:
+        st.session_state.CodeProjectname = Namedict
+
         return df
     except:
         ExceptHandler()
@@ -393,9 +404,9 @@ try:
         # df = GetProjectsRandom()
         df = GetProjects_cloud()
 
-        # Add a true/false field to the first column.
-        df_df = df.copy()
-        st.session_state.df_projects = df_df
+        # # Add a true/false field to the first column.
+        # df_df = df.copy()
+        # st.session_state.df_projects = df_df
 
         column_config = {'billcode':st.column_config.TextColumn(label='Billing Code',width='medium'),
                          'projectname':st.column_config.TextColumn(label='Project Name',width='medium')}
