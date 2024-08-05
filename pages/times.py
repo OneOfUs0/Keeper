@@ -57,7 +57,7 @@ try:
         st.session_state.txt_comment = ''
 
     if 'status' not in st.session_state:
-        st.session_state.status = 'rest'
+        st.session_state.status = 'resting'
 
     if 'active_project_code' not in st.session_state:
         st.session_state.active_project_code = '0'
@@ -115,11 +115,16 @@ try:
             date_ord = now.toordinal()
             adate = now.strftime('%m/%d/%Y')
             theday = now.strftime('%A')
-
             log_record = {'date_ord': date_ord, 'adate': adate, 'none': theday, 'projectname': 'none',
                           'billcode': '0', 'comment': 'none',
                           'elapsedtime': 0, 'userid': 0}
             doc_ref.set(log_record)
+
+            # starttime
+            print('Creating starttime collection.')
+            doc_ref = db.collection('starttime').document()
+            doc_ref.set({'datetime':1234567})
+
 
             # # delete the bogus project and work document.
             # docs = db.collection('projects').get()
@@ -244,6 +249,8 @@ def AddEntry():
             Database_Log_Add(log_record)
 
 
+
+
     except:
         ExceptHandler()
 def startworking():
@@ -255,6 +262,23 @@ def startworking():
         st.session_state.starttime = datetime.datetime.now()
         st.session_state.startdate = datetime.date.today()  #datetime.date
 
+        # datetime to epoch
+        epoch_start = int((datetime.datetime.now() - datetime.datetime(1970,1,1)).total_seconds())
+
+        # epoch to datetime
+        adatetime = datetime.datetime.fromtimestamp(epoch_start)
+
+        print('start at epoch ' + str(str(epoch_start)))
+
+        # record this in the database.
+        doc_refs = db.collection('starttime').get()
+        for doc in doc_refs:
+            docid = doc.id
+            print('doc: ' + docid)
+            adoc = db.collection('starttime').document(docid)
+            adoc.set({'datetime':epoch_start})
+
+
     except:
         ExceptHandler()
 def stopworking():
@@ -265,6 +289,21 @@ def stopworking():
         # stop time and date
         st.session_state.stoptime = datetime.datetime.now()
         st.session_state.stopdate = datetime.date.today()  # datetime.date
+
+        # get start time from the database.
+        doc_refs = db.collection('starttime').get()
+        for doc in doc_refs:
+            # docid = doc.id
+            # print('doc: ' + docid)
+            # adoc = db.collection('starttime').document(docid)
+            rec = doc.to_dict()
+            epoch_start = rec['datetime']
+
+        print('You had started at epoch ' + str(epoch_start))
+
+        # convert start to datetime
+        st.session_state.starttime = datetime.datetime.fromtimestamp(epoch_start)
+
 
         # LOG billcode, time, and comments.
         st.session_state.btn_stop_clicked = True
@@ -341,15 +380,18 @@ def DeleteSelectedProject():
 
 def btnstartstop_click():
     try:
-        if st.session_state.btnstop:
-            # stop working.
-            stopworking()
-            st.session_state.status = 'rest'
 
         if st.session_state.btnstart:
             # start working
             startworking()
-            st.session_state.status = 'work'
+            st.session_state.status = 'working'
+
+        if st.session_state.btnstop:
+            # stop working.
+            stopworking()
+            st.session_state.status = 'resting'
+
+
     except:
         ExceptHandler()
 def btnBulkUpload_Click():
@@ -380,14 +422,16 @@ def btnNavReport_Click():
 
 # ===============================  UI  ===========================================
 try:
-    tittlecol1, tittlecol2 = st.columns([5, 1])
+    tittlecol1, tittlecol2 = st.columns([2, 5])
 
     with tittlecol1:
         # TITLE
-        st.header('Project Time Keeper')
+        st.subheader('Keep Track of ... my time')
 
 
-    # with tittlecol2:
+    with tittlecol2:
+        st.title(st.session_state.active_project_name,
+             help='The project you are working on.')
     #     # BUTTON
     #     st.button('New Week (clear history)',
     #               key='clearall',
@@ -403,6 +447,8 @@ try:
         # Get project data from the cloud database.
         # df = GetProjectsRandom()
         df = GetProjects_cloud()
+
+        st.subheader('Projects')
 
         # # Add a true/false field to the first column.
         # df_df = df.copy()
@@ -431,19 +477,21 @@ try:
 
     with column2:
 
-        st.subheader(st.session_state.active_project_name,
-                     help='The project you are working on.')
+
 
         # TEXTAREA
-        st.text_area('Comments about tasks:',
+        st.text_area('Comments about work performed and task:',
                      key='txt_comment',
                      on_change=comment_changed,
                      max_chars=200,
                      help='Type a description of the work you are doing.  You can also edit this while working.')
 
+        st.divider()
+        st.subheader('Modify project list:')
+
         btndisabled_Delete = (st.session_state.status == 'work') or (st.session_state.active_project_code == '0'
                                                                      )
-        st.button('Delete',
+        st.button('Remove Selected Projct from List',
                   key='btnDeleteSelected',
                   help='Delete the selected project.',
                   on_click=DeleteSelectedProject,
@@ -497,7 +545,7 @@ try:
                disablestart = True
                disablestop = True
            else:
-               if st.session_state.status == 'work':
+               if st.session_state.status == 'working':
                    disablestart = True
                    disablestop = False
                else:
@@ -526,7 +574,7 @@ try:
                st.markdown(explain)
 
                st.page_link('pages/report.py',
-                            label='Go to Summary Report',
+                            label='Go to: Reporting ... my time',
                             disabled=bool(st.session_state.status == 'work'))
 
                st.button('Delete all work history',

@@ -3,6 +3,7 @@ import pandas as pd
 import string, os, random
 import datetime
 import  traceback, sys
+import altair as alt
 
 # import firebase_admin
 # from firebase_admin import firestore
@@ -151,9 +152,7 @@ def CreateRandomRecords():
             day = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][random.randint(0, 4)]
 
             date = '06/01/2024'
-
             rec = {'day': day, 'date': date, 'billcode': code.strip('.'), 'projectname': name, 'comments': comments}
-
             records.append(rec)
 
         return records
@@ -198,7 +197,7 @@ def ConfigToCSV():
 
 # ===============================  UI  ===========================================
 
-st.header('Report')
+st.subheader('Reporting ... my time')
 
 col1, col2, col3, col4 = st.columns([2,2,2,2])
 
@@ -212,7 +211,7 @@ with col1:
                   on_click=GenerateTimeReport)
     with subcol2:
         st.page_link('pages/times.py',
-                     label='Go Back to Keeping Track of my Time')
+                     label='Go to: Keeping Track of ...my time')
 
 with col3:
     st.date_input('Start Date',
@@ -255,6 +254,25 @@ st.data_editor(report_df,
                hide_index=True,
                column_config=report_config,
                use_container_width=True)
+
+st.divider()
+
+# -------- GRAPH -----------------------------
+#
+# st.bar_chart(st.session_state.reportdf,
+#              x='Day',
+#              y='Time',
+#              color='Projectname')
+st.divider()
+
+chart = (
+    alt.Chart(st.session_state.reportdf)
+    .mark_bar()
+    .encode(y='Projectname',x='Time',color='Day')
+)
+st.altair_chart(chart,
+                use_container_width=True)
+
 
 # st.button('convert config to csv.',
 #           on_click=ConfigToCSV)
